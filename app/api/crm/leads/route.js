@@ -1,82 +1,30 @@
-import { put, list } from '@vercel/blob';
 import { NextResponse } from 'next/server';
+import {
+  checkAuth, loadMeta, saveMeta, loadAllLeads, enrichLead, STAGES, fireTriggers,
+} from '../lib';
 
 export const runtime = 'edge';
-
-const STAGES = ['novo', 'contactado', 'qualificado', 'proposta', 'negociacao', 'fechado', 'perdido'];
-
-function checkAuth(request) {
-  const { searchParams } = new URL(request.url);
-  const auth = searchParams.get('auth') || request.headers.get('x-crm-auth') || '';
-  return auth === (process.env.CRM_PASSWORD || 'solar2026');
-}
-
-async function loadAllLeads(token) {
-  const { blobs } = await list({ prefix: 'leads/', limit: 200, token });
-  const sorted = blobs.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
-  const slice = sorted.slice(0, 120);
-  const items = await Promise.all(
-    slice.map(async (b) => {
-      try {
-        const res = await fetch(b.url);
-        const data = await res.json();
-        return { pathname: b.pathname, url: b.url, uploadedAt: b.uploadedAt, data };
-      } catch {
-        return null;
-      }
-    })
-  );
-  return items.filter(Boolean);
-}
-
-async function loadCrmMeta(token) {
-  try {
-    const { blobs } = await list({ prefix: 'crm/meta.json', limit: 1, token });
-    if (!blobs.length) return {};
-    const res = await fetch(blobs[0].url);
-    return await res.json();
-  } catch {
-    return {};
-  }
-}
-
-async function saveCrmMeta(token, meta) {
-  await put('crm/meta.json', JSON.stringify(meta, null, 2), {
-    access: 'public', contentType: 'application/json', token, addRandomSuffix: false, allowOverwrite: true,
-  });
-}
 
 export async function GET(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB nao configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+
   try {
     const { searchParams } = new URL(request.url);
     const stage = searchParams.get('stage');
     const q = (searchParams.get('q') || '').toLowerCase();
-    const [rawLeads, meta] = await Promise.all([loadAllLeads(token), loadCrmMeta(token)]);
-    const leads = rawLeads.map((item) => {
-      const d = item.data || {};
-      const id = d.id || item.pathname;
-      const crm = meta[id] || {};
-      return {
-        id, pathname: item.pathname, url: item.url, uploadedAt: item.uploadedAt,
-        mode: d.mode || '—', nome: d.nome || d.contato || crm.nome || '—',
-        contato: d.contato || crm.contato || '—',
-        telefone: crm.telefone || d.contato || d.telefone || '',
-        cidade: d.cidade || crm.cidade || '—',
-        stage: crm.stage || 'novo', tags: crm.tags || [], notes: crm.notes || [],
-        score: crm.score || 0, owner: crm.owner || '', nextAction: crm.nextAction || '',
-        nextActionAt: crm.nextActionAt || null,
-        updatedAt: crm.updatedAt || d.receivedAt || item.uploadedAt, data: d,
-      };
-    });
-    let filtered = leads;
-    if (stage) filtered = filtered.filter((l) => l.stage === stage);
-    if (q) filtered = filtered.filter((l) => JSON.stringify(l).toLowerCase().includes(q));
+    const [raw, meta] = await Promise.all([loadAllLeads(token), loadMeta(token)]);
+    let leads = raw.map((i) => enrichLead(i, meta));
+    if (stage) leads = leads.filter((l) => l.stage === stage);
+    if (q) leads = leads.filter((l) => JSON.stringify(l).toLowerCase().includes(q));
+
     const funnel = {};
-    STAGES.forEach((s) => { funnel[s] = leads.filter((l) => l.stage === s).length; });
-    return NextResponse.json({ ok: true, stages: STAGES, funnel, count: filtered.length, leads: filtered });
+    STAGES.forEach((s) => {
+      funnel[s] = raw.map((i) => enrichLead(i, meta)).filter((l) => l.stage === s).length;
+    });
+
+    return NextResponse.json({ ok: true, stages: STAGES, funnel, count: leads.length, leads });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }
@@ -85,14 +33,24 @@ export async function GET(request) {
 export async function PATCH(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB nao configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+
   try {
     const body = await request.json();
-    const { id, stage, tags, note, telefone, nome, contato, score, owner, nextAction, nextActionAt } = body;
-    if (!id) return NextResponse.json({ error: 'id obrigatorio' }, { status: 400 });
-    if (stage && !STAGES.includes(stage)) return NextResponse.json({ error: 'stage invalido', stages: STAGES }, { status: 400 });
-    const meta = await loadCrmMeta(token);
+    const {
+      id, stage, tags, note, telefone, nome, contato, score, owner,
+      nextAction, nextActionAt, appointmentAt, value, source, fire = true,
+    } = body;
+    if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 });
+    if (stage && !STAGES.includes(stage)) {
+      return NextResponse.json({ error: 'stage inválido', stages: STAGES }, { status: 400 });
+    }
+
+    const meta = await loadMeta(token);
     const current = meta[id] || { notes: [], tags: [] };
+    const prevStage = current.stage || 'novo';
+    const prevTags = [...(current.tags || [])];
+
     if (stage) current.stage = stage;
     if (Array.isArray(tags)) current.tags = tags;
     if (telefone !== undefined) current.telefone = telefone;
@@ -102,15 +60,73 @@ export async function PATCH(request) {
     if (owner !== undefined) current.owner = owner;
     if (nextAction !== undefined) current.nextAction = nextAction;
     if (nextActionAt !== undefined) current.nextActionAt = nextActionAt;
+    if (appointmentAt !== undefined) current.appointmentAt = appointmentAt;
+    if (value !== undefined) current.value = Number(value) || 0;
+    if (source !== undefined) current.source = source;
+
     if (note && String(note).trim()) {
       current.notes = current.notes || [];
       current.notes.unshift({ text: String(note).trim(), at: new Date().toISOString(), by: 'crm' });
       current.notes = current.notes.slice(0, 50);
     }
+
     current.updatedAt = new Date().toISOString();
     meta[id] = current;
-    await saveCrmMeta(token, meta);
-    return NextResponse.json({ ok: true, id, crm: current });
+    await saveMeta(token, meta);
+
+    let triggered = [];
+    if (fire) {
+      const raw = await loadAllLeads(token);
+      const item = raw.find((i) => (i.data?.id || i.pathname) === id);
+      if (item) {
+        const lead = enrichLead(item, meta);
+        if (stage && stage !== prevStage) {
+          if (stage === 'fechado') {
+            triggered = await fireTriggers({ type: 'ganhar', stage }, lead, request, token);
+          } else if (stage === 'perdido') {
+            triggered = await fireTriggers({ type: 'perder', stage }, lead, request, token);
+          } else {
+            triggered = await fireTriggers({ type: 'contato_coluna', stage }, lead, request, token);
+            if (prevStage) {
+              await fireTriggers({ type: 'contato_removido', stage: prevStage }, lead, request, token);
+            }
+          }
+        }
+        if (Array.isArray(tags)) {
+          const added = tags.filter((t) => !prevTags.includes(t));
+          const removed = prevTags.filter((t) => !tags.includes(t));
+          for (const t of added) {
+            triggered = triggered.concat(await fireTriggers({ type: 'tag_adicionada', tag: t }, lead, request, token));
+          }
+          for (const t of removed) {
+            triggered = triggered.concat(await fireTriggers({ type: 'tag_removida', tag: t }, lead, request, token));
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({ ok: true, id, crm: current, triggered, triggersFired: triggered });
+  } catch (err) {
+    return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
+  }
+}
+
+export async function POST(request) {
+  if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+
+  try {
+    const body = await request.json();
+    if (body.action === 'fire_novo' && body.leadId) {
+      const [raw, meta] = await Promise.all([loadAllLeads(token), loadMeta(token)]);
+      const item = raw.find((i) => (i.data?.id || i.pathname) === body.leadId);
+      if (!item) return NextResponse.json({ error: 'Lead não encontrado' }, { status: 404 });
+      const lead = enrichLead(item, meta);
+      const triggered = await fireTriggers({ type: 'novo_contato' }, lead, request, token);
+      return NextResponse.json({ ok: true, triggered });
+    }
+    return NextResponse.json({ error: 'action inválida' }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }
