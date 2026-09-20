@@ -1,5 +1,6 @@
 import { put, list } from '@vercel/blob';
 import { NextResponse } from 'next/server';
+import { fireTriggers, enrichLead, loadMeta } from '../crm/lib';
 
 export const runtime = 'edge';
 
@@ -27,7 +28,17 @@ export async function POST(request) {
     const blob = await put(pathname, JSON.stringify(payload, null, 2), {
       access: 'public', contentType: 'application/json', token, addRandomSuffix: false,
     });
-    return NextResponse.json({ ok: true, saved: true, id, url: blob.url });
+
+    let triggered = [];
+    try {
+      const meta = await loadMeta(token);
+      const lead = enrichLead({ pathname, url: blob.url, uploadedAt: new Date().toISOString(), data: payload }, meta);
+      triggered = await fireTriggers({ type: 'novo_contato' }, lead, request, token);
+    } catch (e) {
+      console.error('Trigger novo_contato:', e);
+    }
+
+    return NextResponse.json({ ok: true, saved: true, id, url: blob.url, triggered });
   } catch (err) {
     console.error('Erro ao salvar lead:', err);
     return NextResponse.json({ error: 'Falha ao salvar lead', detail: String(err.message || err) }, { status: 500 });
