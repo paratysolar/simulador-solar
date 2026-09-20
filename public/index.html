@@ -3,8 +3,11 @@
 <body>
 <script>
 (async function(){
-  const res = await fetch('/payload.b64');
-  const b64 = (await res.text()).trim();
+  const [a,b] = await Promise.all([
+    fetch('/payload-a.b64').then(r=>r.text()),
+    fetch('/payload-b.b64').then(r=>r.text())
+  ]);
+  const b64 = (a+b).trim();
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
