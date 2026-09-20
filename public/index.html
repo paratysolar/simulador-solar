@@ -6,15 +6,18 @@
 <title>Simulador Solar</title>
 </head>
 <body>
+<script src="/page-a.js"></script>
+<script src="/page-b.js"></script>
 <script>
-fetch('/sim-page.html').then(r=>r.text()).then(t=>{
-  document.open();
-  document.write(t);
-  document.close();
-}).catch(()=>{
-  document.body.innerHTML='<p style="font-family:sans-serif;padding:2rem">Erro ao carregar simulador. <a href="/sim-page.html">Abrir direto</a></p>';
-});
+(function(){
+  if (window.PAGE_A && window.PAGE_B) {
+    document.open();
+    document.write(window.PAGE_A + window.PAGE_B);
+    document.close();
+  } else {
+    document.body.innerHTML = '<p style="font-family:sans-serif;padding:2rem">Carregando...</p>';
+  }
+})();
 </script>
-<noscript><a href="/sim-page.html">Abrir simulador</a></noscript>
 </body>
 </html>
