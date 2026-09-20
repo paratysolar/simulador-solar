@@ -3,14 +3,15 @@
 <body>
 <script>
 (async function(){
-  const b64="PLACEHOLDER_WILL_REPLACE";
-  const bin=atob(b64);
-  const bytes=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-  const ds=new DecompressionStream("gzip");
-  const stream=new Blob([bytes]).stream().pipeThrough(ds);
-  const text=await new Response(stream).text();
-  document.open();document.write(text);document.close();
+  const res = await fetch('/payload.b64');
+  const b64 = (await res.text()).trim();
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const ds = new DecompressionStream('gzip');
+  const stream = new Blob([bytes]).stream().pipeThrough(ds);
+  const text = await new Response(stream).text();
+  document.open(); document.write(text); document.close();
 })();
 </script>
 <noscript>Ative JavaScript.</noscript>
