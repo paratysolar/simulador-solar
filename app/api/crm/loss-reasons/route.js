@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { checkAuth, LOSS_REASONS, LOSS_LABELS, loadMeta, loadAllLeads, enrichLead } from '../lib';
+import { checkAuth, loadMeta, loadAllLeads, enrichLead } from '../lib';
+import { LOSS_REASONS, LOSS_LABELS } from '../lib-ext';
 
 export const runtime = 'edge';
 
 export async function GET(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB nao configurado' }, { status: 503 });
   try {
     const [raw, meta] = await Promise.all([loadAllLeads(token), loadMeta(token)]);
     const leads = raw.map((i) => enrichLead(i, meta)).filter((l) => l.stage === 'perdido');

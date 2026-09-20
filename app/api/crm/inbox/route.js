@@ -7,7 +7,7 @@ export const runtime = 'edge';
 export async function GET(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB nao configurado' }, { status: 503 });
   try {
     const { blobs } = await list({ prefix: 'whatsapp/messages/', limit: 200, token });
     const sorted = blobs.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));

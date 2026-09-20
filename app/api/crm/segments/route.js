@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { checkAuth, loadSegments, saveSegments, loadAllLeads, loadMeta, enrichLead, matchSegment } from '../lib';
+import { checkAuth, loadAllLeads, loadMeta, enrichLead } from '../lib';
+import { loadSegments, saveSegments, matchSegment } from '../lib-ext';
 
 export const runtime = 'edge';
 
 export async function GET(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB nao configurado' }, { status: 503 });
   const segments = await loadSegments(token);
   return NextResponse.json({ ok: true, segments });
 }
@@ -14,7 +15,7 @@ export async function GET(request) {
 export async function POST(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB nao configurado' }, { status: 503 });
   try {
     const body = await request.json();
     let segments = await loadSegments(token);
@@ -37,7 +38,7 @@ export async function POST(request) {
       const leads = raw.map((i) => enrichLead(i, meta)).filter((l) => matchSegment(l, body.segment));
       return NextResponse.json({ ok: true, count: leads.length, sample: leads.slice(0, 20) });
     }
-    return NextResponse.json({ error: 'action inválida' }, { status: 400 });
+    return NextResponse.json({ error: 'action invalida' }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }

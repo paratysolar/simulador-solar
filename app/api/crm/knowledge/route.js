@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { checkAuth, loadKnowledge, saveKnowledge } from '../lib';
+import { checkAuth } from '../lib';
+import { loadKnowledge, saveKnowledge } from '../lib-ext';
 
 export const runtime = 'edge';
 
 export async function GET(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB nao configurado' }, { status: 503 });
   const items = await loadKnowledge(token);
   return NextResponse.json({ ok: true, items, count: items.length });
 }
@@ -14,7 +15,7 @@ export async function GET(request) {
 export async function POST(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB nao configurado' }, { status: 503 });
   try {
     const body = await request.json();
     let items = await loadKnowledge(token);
@@ -45,7 +46,7 @@ export async function POST(request) {
       await saveKnowledge(token, items);
       return NextResponse.json({ ok: true, items });
     }
-    return NextResponse.json({ error: 'action inválida' }, { status: 400 });
+    return NextResponse.json({ error: 'action invalida' }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }
