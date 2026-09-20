@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { checkAuth, loadAgents, saveAgents, agentReply, loadAllLeads, loadMeta, enrichLead } from '../lib';
+import { checkAuth, loadAllLeads, loadMeta, enrichLead } from '../lib';
+import { loadAgents, saveAgents, agentReply } from '../lib-ext';
 
 export const runtime = 'edge';
 
 export async function GET(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB n\u00e3o configurado' }, { status: 503 });
   const agents = await loadAgents(token);
   return NextResponse.json({ ok: true, agents });
 }
@@ -14,7 +15,7 @@ export async function GET(request) {
 export async function POST(request) {
   if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+  if (!token) return NextResponse.json({ error: 'BLOB n\u00e3o configurado' }, { status: 503 });
   try {
     const body = await request.json();
     const agents = await loadAgents(token);
@@ -43,7 +44,7 @@ export async function POST(request) {
       if (!agent) return NextResponse.json({ error: 'Nenhum agente ativo' }, { status: 404 });
       const [raw, meta] = await Promise.all([loadAllLeads(token), loadMeta(token)]);
       const item = raw.find((i) => (i.data?.id || i.pathname) === body.leadId);
-      if (!item) return NextResponse.json({ error: 'Lead não encontrado' }, { status: 404 });
+      if (!item) return NextResponse.json({ error: 'Lead n\u00e3o encontrado' }, { status: 404 });
       const lead = enrichLead(item, meta);
       const result = await agentReply(agent, lead, body.text, token);
       if (body.send && (lead.telefone || lead.contato)) {
@@ -58,7 +59,7 @@ export async function POST(request) {
       }
       return NextResponse.json({ ok: true, agentId: agent.id, ...result });
     }
-    return NextResponse.json({ error: 'action inválida' }, { status: 400 });
+    return NextResponse.json({ error: 'action inv\u00e1lida' }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }
