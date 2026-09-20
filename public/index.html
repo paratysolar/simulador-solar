@@ -1,23 +1,17 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simulador Solar</title>
-</head>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Simulador Solar</title></head>
 <body>
-<script src="/page-a.js"></script>
-<script src="/page-b.js"></script>
 <script>
-(function(){
-  if (window.PAGE_A && window.PAGE_B) {
-    document.open();
-    document.write(window.PAGE_A + window.PAGE_B);
-    document.close();
-  } else {
-    document.body.innerHTML = '<p style="font-family:sans-serif;padding:2rem">Carregando...</p>';
-  }
+(async function(){
+  const b64="PLACEHOLDER_WILL_REPLACE";
+  const bin=atob(b64);
+  const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  const ds=new DecompressionStream("gzip");
+  const stream=new Blob([bytes]).stream().pipeThrough(ds);
+  const text=await new Response(stream).text();
+  document.open();document.write(text);document.close();
 })();
 </script>
-</body>
-</html>
+<noscript>Ative JavaScript.</noscript>
+</body></html>
