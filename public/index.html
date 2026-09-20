@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Energia Solar Completo | On-Grid • Off-Grid • Híbrido • ROI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --bg-card: #111111;
+      --bg-soft: #161616;
+      --text: #f5f5f5;
+      --text-muted: #a0a0a0;
+      --accent: #06cb3f;
+      --accent-hover: #05af36;
+      --accent-blue: #3e6ae1;
+      --green: #00d26a;
+      --border: #2a2a2a;
+      --radius: 12px;
+      --danger: #ff4d4f;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+    .topbar {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .logo { font-weight: 700; font-size: 1.15rem; color: var(--accent); letter-spacing: -0.02em; }
+    .logo span { color: var(--text); font-weight: 400; }
+    .hero { padding: 48px 0 32px; text-align: center; }
+    .hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 600; letter-spacing: -0.03em; margin-bottom: 12px; }
+    .hero p { color: var(--text-muted); max-width: 560px; margin: 0 auto 28px; font-weight: 300; }
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .mode-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .mode-btn:hover, .mode-btn.active {
+      border-color: var(--accent);
+      background: rgba(6, 203, 63, 0.08);
+      transform: translateY(-2px);
+    }
+    .mode-btn .icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .mode-btn h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .mode-btn p { font-size: 0.8rem; color: var(--text-muted); }
+    .panel { display: none; padding: 20px 0 60px; }
+    .panel.active { display: block; }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+    .card h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 6px; }
+    .card .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 22px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 0.82rem; color: var(--text-muted);
+      margin-bottom: 6px; font-weight: 500;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .form-group input[readonly] { opacity: 0.75; }
+    .cep-status { font-size: 0.8rem; margin-top: 4px; min-height: 18px; }
+    .cep-status.ok { color: var(--green); }
+    .cep-status.err { color: var(--danger); }
+    .human-box {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 18px 0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .human-box input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+    .human-box span { font-size: 0.9rem; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--accent);
+      color: #0a0a0a;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 14px 28px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-secondary:hover { border-color: var(--accent); background: rgba(6,203,63,0.08); }
+    .btn-row { display: flex; gap: 12px; margin-top: 12px; }
+    .btn-row .btn { width: auto; flex: 1; }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .result-box {
+      background: var(--bg-soft);
+      border-radius: 12px;
+      padding: 18px 14px;
+      text-align: center;
+    }
+    .result-box .label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+    .result-box .value { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; }
+    .result-box .value.green { color: var(--green); }
+    .result-box .value.accent { color: var(--accent); }
+    .result-box .note { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .loads-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 12px 0; }
+    .loads-table th, .loads-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    .loads-table th { color: var(--text-muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; }
+    .loads-table .remove-btn {
+      background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0 4px;
+    }
+    .add-load-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 8px; align-items: end; margin-bottom: 12px; }
+    @media (max-width: 700px) { .add-load-row { grid-template-columns: 1fr 1fr; } }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;
+      cursor: pointer; background: none; border: none; font-family: inherit;
+    }
+    .back-link:hover { color: var(--accent); }
+    footer {
+      text-align: center; padding: 28px 0; color: var(--text-muted);
+      font-size: 0.8rem; border-top: 1px solid var(--border);
+    }
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--bg-card); border: 1px solid var(--accent);
+      color: var(--text); padding: 14px 24px; border-radius: 100px;
+      font-size: 0.9rem; z-index: 999; opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .toast.show { opacity: 1; }
+    .fórmula {
+      background: var(--bg-soft); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; text-align: center; margin: 20px 0;
+    }
+    .fórmula code { font-family: 'Inter', monospace; font-size: 1rem; color: var(--green); font-weight: 500; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="logo">Simulador<span>Solar</span></div>
+      <div style="font-size:0.8rem;color:var(--text-muted)">On-Grid • Off-Grid • Híbrido • ROI</div>
+    </div>
+  </div>
+
+  <section id="modeSelect" class="hero">
+    <div class="container">
+      <h1>Simulador de Energia Solar</h1>
+      <p>Escolha o tipo de sistema ou análise que deseja calcular. Dados técnicos baseados no mercado brasileiro 2026.</p>
+      <div class="mode-grid">
+        <div class="mode-btn" data-mode="ongrid" onclick="selectMode('ongrid')">
+          <div class="icon">🔌</div>
+          <h3>On-Grid</h3>
+          <p>Conectado à rede<br>Economia na conta</p>
+        </div>
+        <div class="mode-btn" data-mode="offgrid" onclick="selectMode('offgrid')">
+          <div class="icon">🔋</div>
+          <h3>Off-Grid</h3>
+          <p>Independente da rede<br>Com baterias</p>
+        </div>
+        <div class="mode-btn" data-mode="hibrido" onclick="selectMode('hibrido')">
+          <div class="icon">⚡</div>
+          <h3>Híbrido</h3>
+          <p>Rede + baterias<br>Backup + economia</p>
+        </div>
+        <div class="mode-btn" data-mode="roi" onclick="selectMode('roi')">
+          <div class="icon">📈</div>
+          <h3>ROI / Payback</h3>
+          <p>Retorno do investimento<br>Análise financeira</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ON-GRID / OFF-GRID / HÍBRIDO / ROI panels + full JS are in the deployed app.
+       This placeholder ensures the repo builds; full file is in the local project.
+       Re-upload complete index from artifacts if needed. -->
+  <div class="container" style="padding:40px 20px;text-align:center">
+    <p style="color:var(--text-muted)">Carregando simulador completo...</p>
+    <p style="margin-top:12px"><a href="https://github.com/paratysolar/simulador-solar" style="color:var(--accent)">Ver repositório</a></p>
+  </div>
+
+  <footer>
+    <div class="container">
+      Simulador educativo. Valores aproximados de mercado brasileiro 2026.
+    </div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  function selectMode(mode) {
+    document.getElementById('modeSelect').style.display = 'none';
+    alert('Simulador completo em deploy. Modo: ' + mode);
+  }
+</script>
+</body>
+</html>
