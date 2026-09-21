@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  checkAuth, loadMeta, saveMeta, loadAllLeads, enrichLead, STAGES, fireTriggers,
+  checkAuth, loadMeta, saveMeta, loadAllLeads, enrichLead, STAGES, fireTriggers, blobDel,
 } from '../lib';
 
 export const runtime = 'edge';
@@ -39,11 +39,11 @@ export async function PATCH(request) {
     const body = await request.json();
     const {
       id, stage, tags, note, telefone, nome, contato, score, owner,
-      nextAction, nextActionAt, appointmentAt, value, source, fire = true,
+      nextAction, nextActionAt, appointmentAt, value, source, lossReason, customFields, priority, fire = true,
     } = body;
     if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 });
-    if (stage && !STAGES.includes(stage)) {
-      return NextResponse.json({ error: 'stage inválido', stages: STAGES }, { status: 400 });
+    if (stage && typeof stage !== 'string') {
+      return NextResponse.json({ error: 'stage inválido' }, { status: 400 });
     }
 
     const meta = await loadMeta(token);
@@ -63,6 +63,9 @@ export async function PATCH(request) {
     if (appointmentAt !== undefined) current.appointmentAt = appointmentAt;
     if (value !== undefined) current.value = Number(value) || 0;
     if (source !== undefined) current.source = source;
+    if (lossReason !== undefined) current.lossReason = lossReason;
+    if (customFields && typeof customFields === 'object') current.customFields = { ...(current.customFields || {}), ...customFields };
+    if (priority !== undefined) current.priority = priority;
 
     if (note && String(note).trim()) {
       current.notes = current.notes || [];
@@ -127,6 +130,34 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, triggered });
     }
     return NextResponse.json({ error: 'action inválida' }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  if (!checkAuth(request)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) return NextResponse.json({ error: 'BLOB não configurado' }, { status: 503 });
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const { searchParams } = new URL(request.url);
+    const id = body.id || searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 });
+
+    const [raw, meta] = await Promise.all([loadAllLeads(token), loadMeta(token)]);
+    const item = raw.find((i) => (i.data?.id || i.pathname) === id || i.pathname?.includes(id));
+    if (item?.url) {
+      await blobDel(item.url, token);
+    } else {
+      await blobDel(`leads/${id}.json`, token);
+    }
+    if (meta[id]) {
+      delete meta[id];
+      await saveMeta(token, meta);
+    }
+    return NextResponse.json({ ok: true, id, message: 'Contato excluído' });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
   }
