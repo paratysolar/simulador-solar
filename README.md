@@ -1,108 +1,52 @@
-# Simulador Solar Completo + CRM Embutido
+# Simulador Solar + CRM + WhatsApp (Paraty Solar)
 
-Simulador de energia solar (estilo Intelbras) com **4 modos**, captura de leads no **Vercel Blob** e **CRM embutido** protegido por senha.
-
-## URLs
-
-| Página | Caminho |
-|--------|---------|
-| Simulador | `/` ou `/index.html` |
-| CRM Leads | `/crm` |
-
-**Domínios Vercel (time INTELBRAS SOLAR):**
-- https://simulador-solar-zeta.vercel.app
-- https://simulador-solar-intelbras-solar.vercel.app
-
-> Se o time tiver SSO/Vercel Authentication ativo, acesse pelo dashboard Vercel ou desative a proteção em **Project → Settings → Deployment Protection**.
-
-## Modos do simulador
-
-| Modo | O que calcula |
-|------|----------------|
-| **On-Grid** | kWp, área, custo, geração, economia anual, payback |
-| **Off-Grid** | Tabela de cargas, autonomia, Ah, kWp, inversor, custo |
-| **Híbrido** | FV + bateria de backup (kWh), custo, payback |
-| **ROI** | ROI %, payback e economia líquida (degradação + manutenção) |
-
-Recursos em todos os modos:
-- Checkbox **“Sou humano”** (obrigatório para calcular)
-- **CEP automático** via ViaCEP → preenche cidade/UF e HSP
-- Botão **Salvar lead** → grava no Vercel Blob + localStorage
-
-## CRM embutido (`/crm`)
-
-1. Abra `/crm`
-2. Senha padrão: **`solar2026`** (variável de ambiente `CRM_PASSWORD`)
-3. Dashboard com:
-   - Contadores por modo (On-Grid / Off-Grid / Híbrido / ROI)
-   - Filtro por modo e busca textual
-   - Tabela de leads (data, contato, cidade, resumo)
-   - Detalhe completo em JSON ao clicar em **Ver**
+Simulador de energia solar completo (On-Grid, Off-Grid, Hibrido, ROI) com captura de leads e **CRM embutido com integracao WhatsApp Business Cloud API**.
 
 ## Stack
 
 - **Next.js 14** (App Router)
-- **API** `POST /api/leads` → grava JSON no **Vercel Blob** (`leads/{mode}/{id}.json`)
-- **API** `GET /api/leads?full=1&auth=SENHA` → lista leads (autenticado)
-- Frontend estático em `public/` (HTML gzip-loader + `sim.js` + `sim.css`)
-- CRM em React: `app/crm/page.js`
+- **Vercel Blob** -> banco de dados (leads + config WhatsApp + conversas)
+- **WhatsApp Cloud API** -> mensagens de servico gratuitas (janela 24h)
+- Frontend estatico do simulador em `public/`
 
-## Variáveis de ambiente (já configuradas no projeto)
+## Banco de dados
 
-| Variável | Uso |
-|----------|-----|
-| `BLOB_READ_WRITE_TOKEN` | Token do Blob Store (injetado ao criar o store) |
-| `CRM_PASSWORD` | Senha do painel `/crm` (default local: `solar2026`) |
+Ja criado e em uso: **Vercel Blob** (store conectado ao projeto).
 
-## Deploy (Git + Vercel)
+| Dado | Path no Blob |
+|------|----------------|
+| Leads | `leads/{mode}/{id}.json` |
+| Config WhatsApp | `config/whatsapp.json` |
+| Mensagens | `whatsapp/messages/{phone}/...` |
 
-Repositório: https://github.com/paratysolar/simulador-solar  
-Projeto Vercel: **simulador-solar** no time **INTELBRAS SOLAR**
+Quando o volume crescer, migraremos para **Vercel Postgres** sem mudar a UI do CRM.
 
-Push na branch `main` dispara deploy automático.
+## CRM (`/crm`)
 
-```bash
-git add -A
-git commit -m "Atualização"
-git push origin main
-```
+**Senha:** definida **apenas** na variável de ambiente `CRM_PASSWORD` no Vercel.  
+Não existe senha padrão no código. Defina uma senha forte em:
+Vercel → Project → Settings → Environment Variables → `CRM_PASSWORD`.
 
-## Embed (iframe)
+### Abas
 
-```html
-<iframe
-  src="https://simulador-solar-zeta.vercel.app/index.html"
-  width="100%"
-  height="900"
-  frameborder="0"
-  style="border:none;border-radius:12px;min-height:800px"
-  title="Simulador Solar">
-</iframe>
-```
+1. **Leads** — lista, filtros, detalhe JSON
+2. **WhatsApp** — inbox de conversas + resposta (gratuita na janela de 24h)
+3. **Configuracoes** — conectar Meta/WhatsApp, webhook, status
 
-## Desenvolvimento local
+### Funcionalidades gratuitas WhatsApp (volume inicial)
 
-```bash
-npm install
-# opcional:
-# export BLOB_READ_WRITE_TOKEN=...
-# export CRM_PASSWORD=solar2026
-npm run dev
-```
+- Receber mensagens (sempre gratis)
+- Responder dentro da janela de 24h (service messages)
+- Webhook em tempo real
+- Ate ~1.000 mensagens de servico/mes por numero (franquia Meta a partir de out/2026)
 
-- Simulador: http://localhost:3000  
-- CRM: http://localhost:3000/crm  
+Marketing templates e disparos frios sao pagos — nao usamos no inicio.
 
-## Estrutura de pastas
+## Como conectar o WhatsApp (parceiro Meta)
 
-```
-app/
-  api/leads/route.js   # POST grava lead | GET lista (auth)
-  crm/page.js          # Dashboard CRM
-  layout.js / page.js  # Redirect para /index.html
-public/
-  index.html           # Loader gzip do simulador completo
-  sim.js               # Cálculos + CEP + capturarLead
-  sim.css              # Estilos
-  crm.html             # CRM estático alternativo
-```
+1. Crie um App em https://developers.facebook.com (tipo Business).
+2. Adicione o produto **WhatsApp -> Cloud API**.
+3. Gere um **token permanente** (System User) ou use o de teste.
+4. Copie **Phone Number ID** e **WABA ID**.
+5. No CRM -> **Configuracoes** -> cole os dados e salve.
+6. Configure o **Webhook**:
