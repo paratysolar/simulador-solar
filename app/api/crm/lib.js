@@ -1,15 +1,19 @@
 import { put, list } from '@vercel/blob';
 
-export const STAGES = ['novo', 'contactado', 'qualificado', 'proposta', 'negociacao', 'fechado', 'perdido'];
+export const STAGES = ['novo', 'qualificacao', 'agendamento', 'call_agendada', 'call_realizada', 'proposta', 'fechado', 'perdido', 'contactado', 'qualificado', 'negociacao'];
 export const STAGE_LABELS = {
-  novo: 'Novo', contactado: 'Contactado', qualificado: 'Qualificado',
-  proposta: 'Proposta', negociacao: 'Negociação', fechado: 'Fechado', perdido: 'Perdido',
+  novo: 'Novo', qualificacao: 'Em Qualificação', agendamento: 'Em Agendamento',
+  call_agendada: 'Call Agendada', call_realizada: 'Call Realizada',
+  proposta: 'Proposta', fechado: 'Fechado', perdido: 'Perdido',
+  contactado: 'Contactado', qualificado: 'Qualificado', negociacao: 'Negociação',
 };
 
 export function checkAuth(request) {
   const { searchParams } = new URL(request.url);
   const auth = searchParams.get('auth') || request.headers.get('x-crm-auth') || '';
-  return auth === (process.env.CRM_PASSWORD || 'solar2026');
+  const expected = process.env.CRM_PASSWORD;
+  if (!expected) return false;
+  return auth === expected;
 }
 
 export async function blobGet(path, token) {
@@ -73,6 +77,7 @@ export function enrichLead(item, meta) {
     nextAction: crm.nextAction || '',
     nextActionAt: crm.nextActionAt || null,
     appointmentAt: crm.appointmentAt || null,
+    lossReason: crm.lossReason || null,
     updatedAt: crm.updatedAt || d.receivedAt || item.uploadedAt,
     createdAt: d.receivedAt || d.ts || item.uploadedAt,
     data: d,
@@ -85,21 +90,10 @@ export const DEFAULT_FLOWS = [
     name: 'Boas-vindas (Novo Contato)',
     active: true,
     trigger: 'novo_contato',
-    triggerStage: null,
     steps: [
       { type: 'message', text: 'Olá {{nome}}! Obrigado pelo interesse em energia solar com a Paraty Solar. Em breve um consultor entra em contato.' },
       { type: 'set_stage', stage: 'contactado' },
       { type: 'add_tag', tag: 'morno' },
-    ],
-  },
-  {
-    id: 'qualificacao',
-    name: 'Qualificação ao Contactar',
-    active: true,
-    trigger: 'contato_coluna',
-    triggerStage: 'contactado',
-    steps: [
-      { type: 'message', text: 'Para te atender melhor, {{nome}}: o interesse é residencial, comercial ou rural? Qual o valor aproximado da conta de luz?' },
     ],
   },
   {
@@ -114,33 +108,13 @@ export const DEFAULT_FLOWS = [
     ],
   },
   {
-    id: 'proposta-followup',
-    name: 'Follow-up Proposta',
-    active: true,
-    trigger: 'contato_coluna',
-    triggerStage: 'proposta',
-    steps: [
-      { type: 'wait', minutes: 1440 },
-      { type: 'message', text: 'Oi {{nome}}! Conseguiu analisar a proposta de energia solar? Posso ajustar o projeto ou tirar dúvidas.' },
-    ],
-  },
-  {
     id: 'ganhou',
     name: 'Ganhou Oportunidade',
     active: true,
     trigger: 'ganhar',
     steps: [
-      { type: 'message', text: 'Parabéns {{nome}}! Bem-vindo à energia solar com a Paraty Solar. Em breve o time de instalação entra em contato.' },
+      { type: 'message', text: 'Parabéns {{nome}}! Bem-vindo à energia solar com a Paraty Solar.' },
       { type: 'add_tag', tag: 'cliente' },
-    ],
-  },
-  {
-    id: 'perdeu',
-    name: 'Perdeu Oportunidade',
-    active: false,
-    trigger: 'perder',
-    steps: [
-      { type: 'message', text: '{{nome}}, sentimos que não avançamos agora. Se mudar de ideia sobre energia solar, estamos à disposição!' },
     ],
   },
 ];
@@ -170,7 +144,7 @@ export async function runFlowSteps(flow, lead, request, token) {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-crm-auth': process.env.CRM_PASSWORD || 'solar2026',
+              'x-crm-auth': process.env.CRM_PASSWORD || '',
             },
             body: JSON.stringify({ to: lead.telefone || lead.contato, text }),
           });
@@ -190,10 +164,6 @@ export async function runFlowSteps(flow, lead, request, token) {
     if (step.type === 'add_tag' && step.tag) {
       crm.tags = Array.from(new Set([...(crm.tags || []), step.tag]));
       results.push({ step: 'add_tag', tag: step.tag });
-    }
-    if (step.type === 'remove_tag' && step.tag) {
-      crm.tags = (crm.tags || []).filter((t) => t !== step.tag);
-      results.push({ step: 'remove_tag', tag: step.tag });
     }
     if (step.type === 'wait') {
       results.push({ step: 'wait', minutes: step.minutes || 0 });
@@ -221,11 +191,7 @@ export async function fireTriggers(event, lead, request, token) {
         match = true;
       }
     }
-    if (flow.trigger === 'stage_enter' && event.type === 'contato_coluna' && flow.triggerStage === event.stage) {
-      match = true;
-    }
     if (flow.trigger === 'novo_contato' && event.type === 'novo_contato') match = true;
-
     if (match) {
       const results = await runFlowSteps(flow, lead, request, token);
       fired.push({ flowId: flow.id, name: flow.name, results });
