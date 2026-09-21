@@ -5,6 +5,7 @@ import {
   DEFAULT_PIPELINE, stageLabel, stageColor, fmtMoney, fmtDate,
 } from './crm-data';
 import { CSS } from './crm-styles';
+import ContatosTab from './ContatosTab';
 
 export default function CrmPage() {
   const [auth, setAuth] = useState('');
@@ -60,6 +61,8 @@ export default function CrmPage() {
   const [bcStage, setBcStage] = useState('');
   const [bcResult, setBcResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
   const [testMsg, setTestMsg] = useState('');
   const [testResult, setTestResult] = useState(null);
 
@@ -159,7 +162,7 @@ export default function CrmPage() {
     if (tab === 'relatorios') loadReports();
     if (tab === 'calendario') loadAppts();
     if (tab === 'chat' || tab === 'settings') loadWa();
-    if (tab === 'broadcast') loadLeads();
+    if (tab === 'broadcast' || tab === 'contatos') loadLeads();
   }, [auth, tab, loadLeads, loadFlows, loadAgents, loadKnowledge, loadPipes, loadDash, loadReports, loadAppts, loadWa]);
 
   async function login() {
@@ -220,6 +223,31 @@ export default function CrmPage() {
       body: JSON.stringify({ action: 'create', pipeline: { name: pipeName, columns: pipeCols } }),
     }).then((r) => r.json());
     if (d.ok) { setPipelines(d.pipelines); setActivePipeId(d.pipeline.id); setShowPipe(false); setPipeName(''); setMsg('Pipeline criado'); }
+  }
+
+  async function importGoogleCsv(file) {
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    setErr('');
+    setMsg('');
+    try {
+      const text = await file.text();
+      if (!text.trim()) { setErr('Arquivo CSV vazio'); setImporting(false); return; }
+      const d = await fetch('/api/crm/contacts?auth=' + encodeURIComponent(a), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ csv: text }),
+      }).then((r) => r.json());
+      if (d.ok) {
+        setImportResult(d);
+        setMsg(d.message || ((d.created || 0) + ' contato(s) importado(s)'));
+        await loadLeads();
+      } else setErr(d.error || 'Falha na importacao');
+    } catch (e) {
+      setErr('Erro ao ler/importar CSV: ' + (e.message || e));
+    }
+    setImporting(false);
   }
 
   async function createOpportunity() {
@@ -466,16 +494,14 @@ export default function CrmPage() {
                     <div className="col" key={s.id} onDragOver={(e) => e.preventDefault()}
                       onDrop={async (e) => { e.preventDefault(); const id = e.dataTransfer.getData('id'); if (id) await patchLead(id, { stage: s.id }); }}>
                       <div className="col-h" style={{ borderTop: '3px solid ' + s.color }}>
-                        <span>{s.label}</span><span>{byStage[s.id]?.length || 0}</span>
+                        <span>{s.label}</span><span>{(byStage[s.id] || []).length}</span>
                       </div>
                       <div className="col-b">
                         {(byStage[s.id] || []).map((l) => (
-                          <div className="lead-card" key={l.id} draggable
-                            onDragStart={(e) => e.dataTransfer.setData('id', l.id)}
-                            onClick={() => setSelected(l)}>
-                            <strong>{l.nome || 'Sem nome'}</strong>
-                            <div style={{ fontSize: '.8rem', color: 'var(--muted)' }}>{l.telefone || l.cidade || '—'}</div>
-                            {l.value ? <div style={{ fontSize: '.85rem', marginTop: 4 }}>{fmtMoney(l.value)}</div> : null}
+                          <div className="lead-card" key={l.id} draggable onDragStart={(e) => e.dataTransfer.setData('id', l.id)} onClick={() => setSelected(l)}>
+                            <strong>{l.nome}</strong>
+                            <div style={{ fontSize: '.8rem', color: 'var(--muted)' }}>{l.telefone || l.contato}</div>
+                            {l.value ? <div style={{ fontSize: '.8rem' }}>{fmtMoney(l.value)}</div> : null}
                           </div>
                         ))}
                       </div>
@@ -488,39 +514,36 @@ export default function CrmPage() {
             {tab === 'chat' && (
               <div className="card">
                 <h3>Inbox WhatsApp</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 12, minHeight: 360 }}>
-                  <div style={{ borderRight: '1px solid var(--border)', paddingRight: 8 }}>
+                <div style={{ display: 'flex', gap: 16, minHeight: 320 }}>
+                  <div style={{ width: 220, borderRight: '1px solid var(--border)', overflowY: 'auto' }}>
                     {(conversations || []).map((c) => (
-                      <button key={c.phone} className="btn btn-ghost btn-sm" style={{ width: '100%', textAlign: 'left', marginBottom: 4 }}
-                        onClick={() => setActiveChat(c)}>
-                        {c.name || c.phone}
-                      </button>
+                      <div key={c.phone} style={{ padding: 8, cursor: 'pointer', background: activeChat?.phone === c.phone ? 'var(--teal-dim)' : undefined }} onClick={() => setActiveChat(c)}>
+                        <strong>{c.contactName || c.lead?.nome || c.phone}</strong>
+                        <div style={{ fontSize: '.75rem', color: 'var(--muted)' }}>{c.lastMessage?.slice?.(0, 40)}</div>
+                      </div>
                     ))}
-                    {!conversations?.length && <p style={{ color: 'var(--muted)', fontSize: '.85rem' }}>Nenhuma conversa ainda.</p>}
+                    {!conversations?.length && <p style={{ color: 'var(--muted)', fontSize: '.85rem' }}>Sem conversas. Conecte o WhatsApp em Configurações.</p>}
                   </div>
-                  <div>
+                  <div style={{ flex: 1 }}>
                     {activeChat ? (
                       <>
-                        <div style={{ marginBottom: 8, fontWeight: 600 }}>{activeChat.name || activeChat.phone}</div>
-                        <div style={{ maxHeight: 240, overflowY: 'auto', marginBottom: 8, background: '#f8fafc', padding: 8, borderRadius: 8 }}>
+                        <strong>{activeChat.contactName || activeChat.phone}</strong>
+                        <div style={{ margin: '12px 0', maxHeight: 200, overflowY: 'auto', fontSize: '.9rem' }}>
                           {(activeChat.messages || []).map((m, i) => (
                             <div key={i} style={{ marginBottom: 6, textAlign: m.fromMe ? 'right' : 'left' }}>
-                              <span style={{ display: 'inline-block', padding: '6px 10px', borderRadius: 8, background: m.fromMe ? 'var(--teal)' : '#e2e8f0', color: m.fromMe ? '#fff' : '#111', fontSize: '.9rem' }}>{m.text}</span>
+                              <span style={{ background: m.fromMe ? 'var(--teal)' : '#e2e8f0', color: m.fromMe ? '#fff' : '#000', padding: '4px 8px', borderRadius: 8, display: 'inline-block' }}>{m.text}</span>
                             </div>
                           ))}
                         </div>
                         <div style={{ display: 'flex', gap: 8 }}>
-                          <input className="input" style={{ margin: 0, flex: 1 }} value={replyText} onChange={(e) => setReplyText(e.target.value)}
-                            placeholder="Mensagem (grátis 24h)" onKeyDown={(e) => e.key === 'Enter' && sendReply()} />
-                          <button className="btn btn-ghost" onClick={agentSuggest}>IA</button>
-                          <button className="btn btn-primary" onClick={sendReply}>Enviar</button>
+                          <input className="input" style={{ margin: 0, flex: 1 }} value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Mensagem (grátis 24h)" onKeyDown={(e) => e.key === 'Enter' && sendReply()} />
+                          <button className="btn btn-ghost btn-sm" onClick={agentSuggest}>IA</button>
+                          <button className="btn btn-primary btn-sm" onClick={sendReply}>Enviar</button>
                         </div>
                         {waMsg && <div className="ok">{waMsg}</div>}
                         {waErr && <div className="err">{waErr}</div>}
                       </>
-                    ) : (
-                      <p style={{ color: 'var(--muted)' }}>Selecione uma conversa</p>
-                    )}
+                    ) : <p style={{ color: 'var(--muted)' }}>Selecione uma conversa</p>}
                   </div>
                 </div>
               </div>
@@ -528,21 +551,21 @@ export default function CrmPage() {
 
             {tab === 'agents' && (
               <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <h3>Agentes IA</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <h3>Agentes de IA</h3>
                   <button className="btn btn-primary btn-sm" onClick={() => setShowAgent(true)}>+ Agente</button>
                 </div>
                 {(agents || []).map((ag) => (
                   <div key={ag.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                    <strong>{ag.name}</strong> — {ag.tone || 'profissional'} {ag.active ? '✓' : '(off)'}
+                    <strong>{ag.name}</strong> — {ag.tone} {ag.active ? '✓' : '(off)'}
+                    <div style={{ fontSize: '.85rem', color: 'var(--muted)' }}>{ag.objective}</div>
                   </div>
                 ))}
-                {!agents?.length && <p style={{ color: 'var(--muted)' }}>Nenhum agente. Crie um ou use o padrão por regras.</p>}
                 <div style={{ marginTop: 16 }}>
                   <h4>Testar resposta</h4>
                   <input className="input" value={testMsg} onChange={(e) => setTestMsg(e.target.value)} placeholder="Ex: Quanto custa o sistema solar?" onKeyDown={(e) => e.key === 'Enter' && testAgent()} />
                   <button className="btn btn-ghost btn-sm" onClick={testAgent}>Testar</button>
-                  {testResult && <pre style={{ marginTop: 8, fontSize: '.85rem', background: '#f8fafc', padding: 8, borderRadius: 8 }}>{JSON.stringify(testResult, null, 2)}</pre>}
+                  {testResult && <pre style={{ fontSize: '.85rem', marginTop: 8 }}>{JSON.stringify(testResult, null, 2)}</pre>}
                 </div>
               </div>
             )}
@@ -592,6 +615,24 @@ export default function CrmPage() {
               </div>
             )}
 
+            {tab === 'contatos' && (
+              <ContatosTab
+                filtered={filtered}
+                q={q}
+                setQ={setQ}
+                importing={importing}
+                importResult={importResult}
+                importGoogleCsv={importGoogleCsv}
+                loadLeads={loadLeads}
+                setShowOpp={setShowOpp}
+                setSelected={setSelected}
+                stageLabel={stageLabel}
+                stageColor={stageColor}
+                activePipe={activePipe}
+                fmtMoney={fmtMoney}
+              />
+            )}
+
             {tab === 'calendario' && (
               <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -610,37 +651,53 @@ export default function CrmPage() {
             {tab === 'relatorios' && (
               <div className="card">
                 <h3>Relatórios</h3>
-                <pre style={{ fontSize: '.85rem', background: '#f8fafc', padding: 12, borderRadius: 8, overflow: 'auto' }}>
-                  {reports ? JSON.stringify(reports, null, 2) : 'Carregando…'}
-                </pre>
+                <pre style={{ fontSize: '.85rem', overflow: 'auto' }}>{JSON.stringify(reports, null, 2)}</pre>
+              </div>
+            )}
+
+            {tab === 'suporte' && (
+              <div className="card">
+                <h3>Suporte Paraty Solar CRM</h3>
+                <ul style={{ lineHeight: 1.8 }}>
+                  <li>Senha CRM: definida apenas no servidor (variável <code>CRM_PASSWORD</code> no Vercel).</li>
+                  <li>Importar contatos: aba Contatos → CSV do Google Contatos.</li>
+                  <li>Webhook WhatsApp: <code>{webhookUrl}</code></li>
+                </ul>
               </div>
             )}
 
             {tab === 'settings' && (
               <div className="card">
-                <h3>Configurações</h3>
-                <p style={{ fontSize: '.85rem', color: 'var(--muted)', marginBottom: 12 }}>
-                  Senha CRM: definida apenas no servidor (variável <code>CRM_PASSWORD</code> no Vercel). Nunca compartilhe.
-                </p>
-                <h4>WhatsApp Cloud API</h4>
-                <input className="input" value={formToken} onChange={(e) => setFormToken(e.target.value)} placeholder="EAAG..." />
+                <h3>WhatsApp Cloud API</h3>
+                <input className="input" value={formToken} onChange={(e) => setFormToken(e.target.value)} placeholder="EAAG... Access Token" />
                 <input className="input" value={formPhoneId} onChange={(e) => setFormPhoneId(e.target.value)} placeholder="Phone Number ID" />
                 <input className="input" value={formWabaId} onChange={(e) => setFormWabaId(e.target.value)} placeholder="WABA ID" />
-                <input className="input" value={formDisplay} onChange={(e) => setFormDisplay(e.target.value)} placeholder="Display phone" />
+                <input className="input" value={formDisplay} onChange={(e) => setFormDisplay(e.target.value)} placeholder="Número exibido" />
                 <button className="btn btn-primary" onClick={saveWa}>Salvar WhatsApp</button>
                 {waMsg && <div className="ok">{waMsg}</div>}
                 {waErr && <div className="err">{waErr}</div>}
-                <p style={{ marginTop: 12, fontSize: '.85rem' }}>Webhook: <code>{webhookUrl}</code></p>
-                <h4 style={{ marginTop: 20 }}>Google Calendar</h4>
-                <input className="input" value={gcalToken} onChange={(e) => setGcalToken(e.target.value)} placeholder="ya29..." />
+                <h3 style={{ marginTop: 24 }}>Google Calendar</h3>
+                <input className="input" value={gcalToken} onChange={(e) => setGcalToken(e.target.value)} placeholder="ya29... Access Token" />
                 <input className="input" value={gcalCalId} onChange={(e) => setGcalCalId(e.target.value)} placeholder="primary" />
-                <button className="btn btn-ghost" onClick={connectGcal}>Conectar</button>
-                {gcal?.connected && <span className="ok"> Conectado</span>}
+                <button className="btn btn-ghost" onClick={connectGcal}>Conectar Calendar</button>
+                <p style={{ fontSize: '.85rem', color: 'var(--muted)' }}>Webhook: {webhookUrl}</p>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {showOpp && (
+        <div className="modal-bg" onClick={() => setShowOpp(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Nova oportunidade</h3>
+            <input className="input" value={oppForm.nome} onChange={(e) => setOppForm((f) => ({ ...f, nome: e.target.value }))} placeholder="Nome" />
+            <input className="input" value={oppForm.telefone} onChange={(e) => setOppForm((f) => ({ ...f, telefone: e.target.value }))} placeholder="Telefone" />
+            <input className="input" value={oppForm.value} onChange={(e) => setOppForm((f) => ({ ...f, value: e.target.value }))} placeholder="Valor" />
+            <button className="btn btn-primary" onClick={createOpportunity}>Criar</button>
+          </div>
+        </div>
+      )}
 
       {showPipe && (
         <div className="modal-bg" onClick={() => setShowPipe(false)}>
@@ -652,27 +709,15 @@ export default function CrmPage() {
         </div>
       )}
 
-      {showOpp && (
-        <div className="modal-bg" onClick={() => setShowOpp(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Nova oportunidade</h3>
-            <input className="input" value={oppForm.nome} onChange={(e) => setOppForm((f) => ({ ...f, nome: e.target.value }))} placeholder="Nome" />
-            <input className="input" value={oppForm.telefone} onChange={(e) => setOppForm((f) => ({ ...f, telefone: e.target.value }))} placeholder="Telefone" />
-            <input className="input" value={oppForm.value} onChange={(e) => setOppForm((f) => ({ ...f, value: e.target.value }))} placeholder="Valor" />
-            <button className="btn btn-primary" onClick={createOpportunity}>Salvar</button>
-          </div>
-        </div>
-      )}
-
       {showTrigger && (
         <div className="modal-bg" onClick={() => setShowTrigger(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Novo flow</h3>
             <input className="input" value={newFlow.name} onChange={(e) => setNewFlow((f) => ({ ...f, name: e.target.value }))} placeholder="Nome" />
             <select className="input" value={newFlow.trigger} onChange={(e) => setNewFlow((f) => ({ ...f, trigger: e.target.value }))}>
-              {(TRIGGER_TYPES || []).map((t) => <option key={t.id || t} value={t.id || t}>{t.label || t}</option>)}
+              {TRIGGER_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
             </select>
-            <textarea className="input" rows={3} value={newFlow.steps?.[0]?.text || ''} onChange={(e) => setNewFlow((f) => ({ ...f, steps: [{ type: 'message', text: e.target.value }] }))} placeholder="Mensagem" />
+            <textarea className="input" rows={2} value={newFlow.steps[0]?.text || ''} onChange={(e) => setNewFlow((f) => ({ ...f, steps: [{ type: 'message', text: e.target.value }] }))} placeholder="Mensagem WA" />
             <button className="btn btn-primary" onClick={saveFlow}>Salvar</button>
           </div>
         </div>
