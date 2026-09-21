@@ -3,298 +3,181 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador de Energia Solar | Paraty Solar</title>
-  <meta name="description" content="Simule On-Grid, Off-Grid, Híbrido e ROI. Preencha seus dados e receba uma estimativa personalizada.">
+  <title>Simulador de energia solar | Paraty Solar</title>
+  <meta name="description" content="Simule seu sistema de energia solar e descubra quanto pode economizar na conta de luz.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/sim.css">
-  <style>
-    .lead-block{margin-top:20px;padding:18px;background:var(--soft,#f1f5f9);border-radius:12px;border:1px solid var(--border,#e2e8f0)}
-    .lead-block h3{font-size:1rem;margin-bottom:12px}
-    .lead-block .req{color:#ef4444}
-    .captcha-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}
-    .captcha-q{font-weight:700;font-size:1.1rem;background:#fff;padding:8px 14px;border-radius:8px;border:1px solid #e2e8f0}
-    .hp{position:absolute;left:-9999px;opacity:0;height:0;width:0;overflow:hidden}
-    .cep-status{font-size:.8rem;margin-top:4px}
-    .cep-status.ok{color:#10b981}
-    .cep-status.err{color:#ef4444}
-    .load-item{font-size:.85rem;padding:6px 0;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between}
-  </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="container topbar-inner">
-      <div class="logo">Paraty <span>Solar</span></div>
-      <div style="font-size:0.8rem;color:var(--text-muted)">Simulador · On-Grid · Off-Grid · Híbrido · ROI</div>
+  <div class="ib-topbar"></div>
+  <header class="ib-header">
+    <div class="ib-logo">Paraty <span>Solar</span></div>
+  </header>
+
+  <section class="ib-hero">
+    <div class="ib-hero-inner">
+      <h1>Economize<br>até 90%<em>na sua conta de luz</em></h1>
+      <span class="accent"></span>
+    </div>
+  </section>
+
+  <div class="ib-form-wrap" id="formWrap">
+    <div class="ib-main">
+      <h2 class="ib-title">Simulador de energia solar</h2>
+
+      <div class="ib-step active" id="step1">
+        <div class="ib-step-label">1. Qual é o tipo do local que irá instalar o gerador?</div>
+        <div class="ib-types">
+          <div class="ib-type" data-tipo="residencial" onclick="selectTipo(this)">
+            <div class="ico">🏠</div>
+            <span>Residencial</span>
+          </div>
+          <div class="ib-type" data-tipo="empresarial" onclick="selectTipo(this)">
+            <div class="ico">🏢</div>
+            <span>Empresarial</span>
+          </div>
+          <div class="ib-type" data-tipo="agronegocio" onclick="selectTipo(this)">
+            <div class="ico">🌾</div>
+            <span>Agronegócio</span>
+          </div>
+          <div class="ib-type" data-tipo="offgrid" onclick="selectTipo(this)">
+            <div class="ico">☀️</div>
+            <span>Sem conexão<br>com a rede<br>elétrica</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ib-step" id="step2">
+        <div class="ib-step-label">2. Onde pretende realizar a instalação?</div>
+        <div class="ib-field">
+          <input type="text" id="campoLocal" placeholder="Digite o CEP, cidade, bairro ou rua"
+            autocomplete="street-address" oninput="onLocalInput(this)">
+        </div>
+        <div class="ib-cep-status" id="cepStatus"></div>
+        <button type="button" class="ib-geo" onclick="usarLocalizacao()">📍 Usar minha localização ›</button>
+      </div>
+
+      <div class="ib-step" id="step3">
+        <div class="ib-step-label">3. Quanto é o seu gasto médio mensal com conta de luz?</div>
+        <p class="ib-hint">*Dados fornecidos na sua conta de luz</p>
+        <div class="ib-field">
+          <input type="text" id="campoGasto" placeholder="R$*" inputmode="decimal"
+            oninput="onGastoInput(this)" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="ib-step" id="step4">
+        <p class="ib-contact-intro">
+          Insira seus dados abaixo e descubra o custo do seu gerador solar e quanto irá
+          economizar por ano! Em caso de áreas remotas entraremos em contato.
+        </p>
+        <div class="ib-field">
+          <label>Nome</label>
+          <input type="text" id="campoNome" placeholder="Seu nome completo" autocomplete="name" oninput="checkReady()">
+        </div>
+        <div class="ib-field">
+          <label>E-mail</label>
+          <input type="email" id="campoEmail" placeholder="seu@email.com" autocomplete="email" oninput="checkReady()">
+        </div>
+        <div class="ib-field">
+          <label>Celular</label>
+          <input type="tel" id="campoCelular" placeholder="(00) 00000-0000" autocomplete="tel"
+            oninput="formatPhone(this); checkReady()">
+        </div>
+        <div class="ib-field">
+          <label>Como nos conheceu?</label>
+          <select id="campoOrigem" onchange="checkReady()">
+            <option value="">Selecione</option>
+            <option value="google">Google</option>
+            <option value="instagram">Instagram</option>
+            <option value="facebook">Facebook</option>
+            <option value="youtube">Youtube</option>
+            <option value="indicacao">Indicação</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+
+        <div class="ib-checks">
+          <label class="ib-check">
+            <input type="checkbox" id="chkNews" checked>
+            <span>Tenho interesse em receber notícias, novidades e promoções.</span>
+          </label>
+          <label class="ib-check">
+            <input type="checkbox" id="chkPriv" onchange="checkReady()">
+            <span>Ao informar os meus dados, concordo com os termos da Política de Privacidade.</span>
+          </label>
+        </div>
+
+        <div class="ib-captcha">
+          <span class="ib-captcha-q" id="captchaQ">?</span>
+          <input type="number" id="captchaA" placeholder="=" oninput="checkReady()">
+          <span style="font-size:.8rem;color:var(--ib-muted)">Não sou um robô</span>
+        </div>
+        <input type="text" class="hp" id="hpField" tabindex="-1" autocomplete="off">
+
+        <button type="button" class="ib-cta" id="btnSimular" disabled onclick="simular()">Simular ›</button>
+      </div>
     </div>
   </div>
 
-  <section id="modeSelect" class="hero">
-    <div class="container">
-      <h1>Simulador de Energia Solar</h1>
-      <p>Escolha o tipo de sistema. Ao final, informe nome, celular e endereço para receber a estimativa e o contato de um consultor.</p>
-      <div class="mode-grid">
-        <div class="mode-btn" onclick="selectMode('ongrid')"><div class="icon">🔌</div><h3>On-Grid</h3><p>Conectado à rede<br>Economia na conta</p></div>
-        <div class="mode-btn" onclick="selectMode('offgrid')"><div class="icon">🔋</div><h3>Off-Grid</h3><p>Independente<br>Com baterias</p></div>
-        <div class="mode-btn" onclick="selectMode('hibrido')"><div class="icon">⚡</div><h3>Híbrido</h3><p>Rede + baterias<br>Backup + economia</p></div>
-        <div class="mode-btn" onclick="selectMode('roi')"><div class="icon">📈</div><h3>ROI / Payback</h3><p>Retorno do<br>investimento</p></div>
+  <div class="ib-results" id="resultsWrap">
+    <h2 class="ib-results-title">Resultado</h2>
+    <div class="ib-metrics">
+      <div class="ib-metric">
+        <div class="ico">⚙️</div>
+        <div class="lbl">Potência instalada*</div>
+        <div class="val" id="rPotencia">—</div>
+      </div>
+      <div class="ib-metric">
+        <div class="ico">📐</div>
+        <div class="lbl">Área mínima necessária*</div>
+        <div class="val" id="rArea">—</div>
+      </div>
+      <div class="ib-metric">
+        <div class="ico">💡</div>
+        <div class="lbl">Valor aproximado do sistema com instalação*.</div>
+        <div class="val" id="rValor">—</div>
+      </div>
+      <div class="ib-metric">
+        <div class="ico">☀️</div>
+        <div class="lbl">Produção mensal*</div>
+        <div class="val" id="rProd">—</div>
+      </div>
+      <div class="ib-metric">
+        <div class="ico">📊</div>
+        <div class="lbl">Economia anual aproximada*</div>
+        <div class="val" id="rEcon">—</div>
+      </div>
+      <div class="ib-metric">
+        <div class="ico">💰</div>
+        <div class="lbl">Tempo aproximado de retorno do investimento*</div>
+        <div class="val" id="rPayback">—</div>
       </div>
     </div>
-  </section>
 
-  <section id="panel-ongrid" class="panel">
-    <div class="container">
-      <button class="btn-back" onclick="backToModes()">← Voltar</button>
-      <div class="card">
-        <h2>Simulação On-Grid</h2>
-        <p class="subtitle">Sistema conectado à rede — créditos de energia na conta de luz.</p>
-        <div class="form-row">
-          <div class="form-group"><label>Tipo de imóvel</label>
-            <select id="og-tipo"><option>Residencial</option><option>Comercial</option><option>Rural</option></select>
-          </div>
-          <div class="form-group"><label>Gasto médio mensal (R$)</label>
-            <input type="number" id="og-gasto" value="450" min="50" step="10">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Tarifa (R$/kWh)</label>
-            <input type="number" id="og-tarifa" value="0.95" min="0.3" max="2.5" step="0.01">
-          </div>
-        </div>
-        <div class="lead-block">
-          <h3>Seus dados <span class="req">*</span> (obrigatório para enviar a simulação)</h3>
-          <div class="form-row">
-            <div class="form-group"><label>Nome completo <span class="req">*</span></label>
-              <input type="text" id="og-nome" placeholder="Como prefere ser chamado" autocomplete="name" required>
-            </div>
-            <div class="form-group"><label>Celular / WhatsApp <span class="req">*</span></label>
-              <input type="tel" id="og-celular" placeholder="(24) 99999-9999" oninput="formatPhone(this)" autocomplete="tel" required>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>CEP <span class="req">*</span></label>
-              <input type="text" id="og-cep" placeholder="00000-000" maxlength="9" oninput="formatCep(this); buscarCep(this.value,'og')" autocomplete="postal-code" required>
-              <div class="cep-status" id="og-cep-status"></div>
-            </div>
-            <div class="form-group"><label>Rua / Logradouro <span class="req">*</span></label>
-              <input type="text" id="og-logradouro" placeholder="Preenchido pelo CEP" autocomplete="address-line1" required>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Número <span class="req">*</span></label>
-              <input type="text" id="og-numero" placeholder="Nº" required>
-            </div>
-            <div class="form-group"><label>Complemento</label>
-              <input type="text" id="og-complemento" placeholder="Apto, bloco...">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Bairro</label>
-              <input type="text" id="og-bairro" placeholder="Bairro">
-            </div>
-            <div class="form-group"><label>Cidade <span class="req">*</span></label>
-              <input type="text" id="og-cidade" placeholder="Cidade" required>
-            </div>
-            <div class="form-group"><label>UF <span class="req">*</span></label>
-              <input type="text" id="og-uf" placeholder="UF" maxlength="2" required>
-            </div>
-          </div>
-          <div class="hp" aria-hidden="true"><label>Website</label><input type="text" id="og-website" tabindex="-1" autocomplete="off"></div>
-          <div class="captcha-row">
-            <span>Verificação <span class="req">*</span></span>
-            <span class="captcha-q" id="og-captcha-q">—</span>
-            <input type="number" id="og-captcha" placeholder="Resultado" style="width:100px" inputmode="numeric">
-            <button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:.8rem" onclick="refreshCaptcha('og')">Trocar</button>
-          </div>
-          <p style="font-size:.75rem;color:var(--text-muted)">Ao enviar, você autoriza o contato comercial da Paraty Solar sobre energia solar.</p>
-        </div>
-        <button class="btn" id="og-btn" onclick="calcularOnGrid()">Calcular e enviar</button>
-      </div>
-      <div class="card" id="og-results" style="display:none">
-        <h2>Resultado On-Grid</h2>
-        <p class="subtitle" id="og-local-info"></p>
-        <div class="results-grid">
-          <div class="result-box"><div class="label">Potência</div><div class="value accent" id="og-kwp">—</div><div class="note">kWp</div></div>
-          <div class="result-box"><div class="label">Área mín.</div><div class="value" id="og-area">—</div><div class="note">m²</div></div>
-          <div class="result-box"><div class="label">Investimento</div><div class="value" id="og-custo">—</div><div class="note">R$</div></div>
-          <div class="result-box"><div class="label">Geração/mês</div><div class="value" id="og-geracao">—</div><div class="note">kWh</div></div>
-          <div class="result-box"><div class="label">Economia/ano</div><div class="value green" id="og-economia">—</div><div class="note">R$</div></div>
-          <div class="result-box"><div class="label">Payback</div><div class="value" id="og-payback">—</div><div class="note">anos</div></div>
-        </div>
+    <div class="ib-actions">
+      <button type="button" class="ib-btn-orange" onclick="solicitarOrcamento()">Solicitar Orçamento ›</button>
+      <div class="ib-actions-row">
+        <button type="button" class="ib-btn-outline" onclick="simularNovamente()">Simular Novamente ›</button>
+        <button type="button" class="ib-btn-outline" onclick="baixarSimulacao()">Baixar Simulação ›</button>
       </div>
     </div>
-  </section>
 
-  <section id="panel-offgrid" class="panel">
-    <div class="container">
-      <button class="btn-back" onclick="backToModes()">← Voltar</button>
-      <div class="card">
-        <h2>Simulação Off-Grid</h2>
-        <p class="subtitle">Sistema isolado com baterias.</p>
-        <div class="form-row">
-          <div class="form-group"><label>Equipamento</label><input type="text" id="of-desc" placeholder="Ex: Geladeira"></div>
-          <div class="form-group"><label>Watts</label><input type="number" id="of-watts" value="150"></div>
-          <div class="form-group"><label>Horas/dia</label><input type="number" id="of-horas" value="8"></div>
-        </div>
-        <button type="button" class="btn btn-ghost" onclick="addLoad()">+ Adicionar carga</button>
-        <div id="of-loads" style="margin:12px 0"></div>
-        <div class="form-group"><label>Dias de autonomia</label><input type="number" id="of-autonomia" value="2" min="1" max="7"></div>
-        <div class="lead-block">
-          <h3>Seus dados <span class="req">*</span></h3>
-          <div class="form-row">
-            <div class="form-group"><label>Nome completo <span class="req">*</span></label><input type="text" id="of-nome" required></div>
-            <div class="form-group"><label>Celular <span class="req">*</span></label><input type="tel" id="of-celular" oninput="formatPhone(this)" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>CEP <span class="req">*</span></label>
-              <input type="text" id="of-cep" maxlength="9" oninput="formatCep(this); buscarCep(this.value,'of')" required>
-              <div class="cep-status" id="of-cep-status"></div>
-            </div>
-            <div class="form-group"><label>Rua <span class="req">*</span></label><input type="text" id="of-logradouro" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Número <span class="req">*</span></label><input type="text" id="of-numero" required></div>
-            <div class="form-group"><label>Complemento</label><input type="text" id="of-complemento"></div>
-            <div class="form-group"><label>Bairro</label><input type="text" id="of-bairro"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Cidade <span class="req">*</span></label><input type="text" id="of-cidade" required></div>
-            <div class="form-group"><label>UF <span class="req">*</span></label><input type="text" id="of-uf" maxlength="2" required></div>
-          </div>
-          <div class="hp"><input type="text" id="of-website" tabindex="-1" autocomplete="off"></div>
-          <div class="captcha-row">
-            <span class="captcha-q" id="of-captcha-q">—</span>
-            <input type="number" id="of-captcha" placeholder="Resultado" style="width:100px">
-            <button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:.8rem" onclick="refreshCaptcha('of')">Trocar</button>
-          </div>
-        </div>
-        <button class="btn" id="of-btn" onclick="calcularOffGrid()">Calcular e enviar</button>
-      </div>
-      <div class="card" id="of-results" style="display:none">
-        <h2>Resultado Off-Grid</h2>
-        <div class="results-grid">
-          <div class="result-box"><div class="label">Potência</div><div class="value accent" id="of-kwp">—</div><div class="note">kWp</div></div>
-          <div class="result-box"><div class="label">Bateria</div><div class="value" id="of-bat">—</div><div class="note">kWh</div></div>
-          <div class="result-box"><div class="label">Investimento</div><div class="value" id="of-custo">—</div><div class="note">R$</div></div>
-        </div>
+    <div class="ib-info-box">
+      <div class="shield">🛡️</div>
+      <div>
+        Você pode adquirir seu sistema e realizar o pagamento em até <strong>21x*</strong> no cartão de crédito.
+        Ou você pode optar por um financiamento de até <strong>120x</strong> com um parceiro financeiro** de sua escolha.
+        Você praticamente substitui a sua conta de energia pela prestação do sistema fotovoltaico, e ao final das parcelas, fica livre!
+        <br><br>
+        Pronto para fazer o sol pagar suas contas? Solicite seu orçamento completo e entenda melhor as opções que cabem no seu bolso!
+        <small>*Sujeito à cobrança de juros<br>**Consulte as condições dos bancos parceiros</small>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section id="panel-hibrido" class="panel">
-    <div class="container">
-      <button class="btn-back" onclick="backToModes()">← Voltar</button>
-      <div class="card">
-        <h2>Simulação Híbrido</h2>
-        <div class="form-row">
-          <div class="form-group"><label>Gasto mensal (R$)</label><input type="number" id="hi-gasto" value="500"></div>
-          <div class="form-group"><label>Tarifa (R$/kWh)</label><input type="number" id="hi-tarifa" value="0.95" step="0.01"></div>
-          <div class="form-group"><label>Backup (kWh)</label><input type="number" id="hi-backup" value="5"></div>
-        </div>
-        <div class="lead-block">
-          <h3>Seus dados <span class="req">*</span></h3>
-          <div class="form-row">
-            <div class="form-group"><label>Nome completo <span class="req">*</span></label><input type="text" id="hi-nome" required></div>
-            <div class="form-group"><label>Celular <span class="req">*</span></label><input type="tel" id="hi-celular" oninput="formatPhone(this)" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>CEP <span class="req">*</span></label>
-              <input type="text" id="hi-cep" maxlength="9" oninput="formatCep(this); buscarCep(this.value,'hi')" required>
-              <div class="cep-status" id="hi-cep-status"></div>
-            </div>
-            <div class="form-group"><label>Rua <span class="req">*</span></label><input type="text" id="hi-logradouro" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Número <span class="req">*</span></label><input type="text" id="hi-numero" required></div>
-            <div class="form-group"><label>Complemento</label><input type="text" id="hi-complemento"></div>
-            <div class="form-group"><label>Bairro</label><input type="text" id="hi-bairro"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Cidade <span class="req">*</span></label><input type="text" id="hi-cidade" required></div>
-            <div class="form-group"><label>UF <span class="req">*</span></label><input type="text" id="hi-uf" maxlength="2" required></div>
-          </div>
-          <div class="hp"><input type="text" id="hi-website" tabindex="-1" autocomplete="off"></div>
-          <div class="captcha-row">
-            <span class="captcha-q" id="hi-captcha-q">—</span>
-            <input type="number" id="hi-captcha" placeholder="Resultado" style="width:100px">
-            <button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:.8rem" onclick="refreshCaptcha('hi')">Trocar</button>
-          </div>
-        </div>
-        <button class="btn" id="hi-btn" onclick="calcularHibrido()">Calcular e enviar</button>
-      </div>
-      <div class="card" id="hi-results" style="display:none">
-        <h2>Resultado Híbrido</h2>
-        <div class="results-grid">
-          <div class="result-box"><div class="label">Potência</div><div class="value accent" id="hi-kwp">—</div><div class="note">kWp</div></div>
-          <div class="result-box"><div class="label">Bateria</div><div class="value" id="hi-bat">—</div><div class="note">kWh</div></div>
-          <div class="result-box"><div class="label">Investimento</div><div class="value" id="hi-custo">—</div><div class="note">R$</div></div>
-          <div class="result-box"><div class="label">Economia/ano</div><div class="value green" id="hi-economia">—</div><div class="note">R$</div></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="panel-roi" class="panel">
-    <div class="container">
-      <button class="btn-back" onclick="backToModes()">← Voltar</button>
-      <div class="card">
-        <h2>Análise ROI / Payback</h2>
-        <div class="form-row">
-          <div class="form-group"><label>Investimento (R$)</label><input type="number" id="roi-investimento" value="35000"></div>
-          <div class="form-group"><label>Economia anual (R$)</label><input type="number" id="roi-economia" value="4800"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Horizonte (anos)</label><input type="number" id="roi-anos" value="25"></div>
-          <div class="form-group"><label>Manutenção %/ano</label><input type="number" id="roi-manutencao" value="1" step="0.1"></div>
-          <div class="form-group"><label>Degradação %/ano</label><input type="number" id="roi-degradacao" value="0.7" step="0.1"></div>
-        </div>
-        <div class="lead-block">
-          <h3>Seus dados <span class="req">*</span></h3>
-          <div class="form-row">
-            <div class="form-group"><label>Nome completo <span class="req">*</span></label><input type="text" id="roi-nome" required></div>
-            <div class="form-group"><label>Celular <span class="req">*</span></label><input type="tel" id="roi-celular" oninput="formatPhone(this)" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>CEP <span class="req">*</span></label>
-              <input type="text" id="roi-cep" maxlength="9" oninput="formatCep(this); buscarCep(this.value,'roi')" required>
-              <div class="cep-status" id="roi-cep-status"></div>
-            </div>
-            <div class="form-group"><label>Rua <span class="req">*</span></label><input type="text" id="roi-logradouro" required></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Número <span class="req">*</span></label><input type="text" id="roi-numero" required></div>
-            <div class="form-group"><label>Complemento</label><input type="text" id="roi-complemento"></div>
-            <div class="form-group"><label>Bairro</label><input type="text" id="roi-bairro"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label>Cidade <span class="req">*</span></label><input type="text" id="roi-cidade" required></div>
-            <div class="form-group"><label>UF <span class="req">*</span></label><input type="text" id="roi-uf" maxlength="2" required></div>
-          </div>
-          <div class="hp"><input type="text" id="roi-website" tabindex="-1" autocomplete="off"></div>
-          <div class="captcha-row">
-            <span class="captcha-q" id="roi-captcha-q">—</span>
-            <input type="number" id="roi-captcha" placeholder="Resultado" style="width:100px">
-            <button type="button" class="btn btn-ghost" style="padding:6px 10px;font-size:.8rem" onclick="refreshCaptcha('roi')">Trocar</button>
-          </div>
-        </div>
-        <button class="btn" id="roi-btn" onclick="calcularROI()">Calcular e enviar</button>
-      </div>
-      <div class="card" id="roi-results" style="display:none">
-        <h2>Resultado ROI</h2>
-        <div class="results-grid">
-          <div class="result-box"><div class="label">Payback</div><div class="value accent" id="roi-payback">—</div><div class="note">anos</div></div>
-          <div class="result-box"><div class="label">Economia total</div><div class="value" id="roi-total">—</div><div class="note">R$</div></div>
-          <div class="result-box"><div class="label">Líquido</div><div class="value green" id="roi-liquido">—</div><div class="note">R$</div></div>
-          <div class="result-box"><div class="label">ROI</div><div class="value" id="roi-pct">—</div><div class="note">%</div></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <div id="toast" class="toast"></div>
-  <footer style="text-align:center;padding:24px;font-size:.8rem;color:var(--text-muted)">
-    Paraty Solar · Simulador público · Estimativas aproximadas para 2026
-  </footer>
+  <div class="ib-toast" id="toast"></div>
   <script src="/sim.js"></script>
 </body>
 </html>
