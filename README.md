@@ -5,48 +5,38 @@ Simulador de energia solar completo (On-Grid, Off-Grid, Hibrido, ROI) com captur
 ## Stack
 
 - **Next.js 14** (App Router)
-- **Vercel Blob** -> banco de dados (leads + config WhatsApp + conversas)
+- **Postgres** (Neon / Vercel Postgres) via `DATABASE_URL`
 - **WhatsApp Cloud API** -> mensagens de servico gratuitas (janela 24h)
 - Frontend estatico do simulador em `public/`
 
 ## Banco de dados
 
-Ja criado e em uso: **Vercel Blob** (store conectado ao projeto).
+**Postgres obrigatório** (Neon ou Vercel Postgres).
 
-| Dado | Path no Blob |
-|------|----------------|
-| Leads | `leads/{mode}/{id}.json` |
-| Config WhatsApp | `config/whatsapp.json` |
-| Mensagens | `whatsapp/messages/{phone}/...` |
+Defina `DATABASE_URL` nas variáveis de ambiente do Vercel.
+O schema (`leads`, `proposals`, `crm_meta`, `whatsapp_messages`, `app_config`) é criado automaticamente no primeiro uso.
 
-Quando o volume crescer, migraremos para **Vercel Postgres** sem mudar a UI do CRM.
+| Tabela | Uso |
+|--------|-----|
+| leads | Captura do simulador + CRM |
+| proposals | Propostas geradas em /prop |
+| crm_meta | Stages/tags do funil |
+| whatsapp_messages | Inbox WA |
+
+Blob **não** é mais usado para leads/propostas.
+
+## Módulo Propostas (`/prop`)
+
+Senha: variável `PROP_PASSWORD` (separada do CRM).
+Gera propostas On-Grid, Off-Grid e Híbrido com lista de materiais e totais.
 
 ## CRM (`/crm`)
 
-**Senha:** definida **apenas** na variável de ambiente `CRM_PASSWORD` no Vercel.  
-Não existe senha padrão no código. Defina uma senha forte em:
-Vercel → Project → Settings → Environment Variables → `CRM_PASSWORD`.
+**Senha:** `CRM_PASSWORD` no Vercel.
 
-### Abas
+## Variáveis
 
-1. **Leads** — lista, filtros, detalhe JSON
-2. **WhatsApp** — inbox de conversas + resposta (gratuita na janela de 24h)
-3. **Configuracoes** — conectar Meta/WhatsApp, webhook, status
-
-### Funcionalidades gratuitas WhatsApp (volume inicial)
-
-- Receber mensagens (sempre gratis)
-- Responder dentro da janela de 24h (service messages)
-- Webhook em tempo real
-- Ate ~1.000 mensagens de servico/mes por numero (franquia Meta a partir de out/2026)
-
-Marketing templates e disparos frios sao pagos — nao usamos no inicio.
-
-## Como conectar o WhatsApp (parceiro Meta)
-
-1. Crie um App em https://developers.facebook.com (tipo Business).
-2. Adicione o produto **WhatsApp -> Cloud API**.
-3. Gere um **token permanente** (System User) ou use o de teste.
-4. Copie **Phone Number ID** e **WABA ID**.
-5. No CRM -> **Configuracoes** -> cole os dados e salve.
-6. Configure o **Webhook**:
+- `DATABASE_URL` (obrigatório)
+- `CRM_PASSWORD`
+- `PROP_PASSWORD` (já criada: prop2026paraty)
+- `BLOB_READ_WRITE_TOKEN` (legado, não usado para leads)
