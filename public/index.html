@@ -1,1 +1,329 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de energia solar | Paraty Solar</title>
+  <meta name="description" content="Simule seu sistema de energia solar e descubra quanto pode economizar na conta de luz.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/sim.css">
+</head>
+<body>
+
+  <!-- NAVBAR verde estilo Intelbras -->
+  <nav class="ib-nav">
+    <div class="ib-nav-inner">
+      <a href="/" class="ib-nav-logo">Paraty <span>Solar</span></a>
+      <div class="ib-nav-links">
+        <a href="#formWrap">On Grid</a>
+        <a href="#formWrap">Off Grid</a>
+        <a href="#formWrap">Para Parceiros</a>
+        <a href="#formWrap" class="ib-nav-cta">Simule sua economia</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="ib-hero">
+    <div class="ib-hero-bg"></div>
+    <div class="ib-hero-content">
+      <h1>Economize<br><strong>até 90%</strong><br><span>na sua conta de luz</span></h1>
+      <div class="ib-hero-line"></div>
+    </div>
+  </section>
+
+  <!-- FORMULÁRIO -->
+  <div class="ib-form-wrap" id="formWrap">
+    <div class="ib-main">
+      <h2 class="ib-title">Simulador de energia solar</h2>
+
+      <div class="ib-step" id="step1">
+        <p class="ib-step-label">1. Qual é o tipo do local que irá instalar o gerador?</p>
+        <div class="ib-types">
+          <button type="button" class="ib-type" data-tipo="residencial" onclick="selectTipo(this)">
+            <svg class="ib-ico" viewBox="0 0 48 40" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M24 4L6 20h6v14h12V24h6v10h12V20h6L24 4z"/>
+              <rect x="20" y="18" width="8" height="7"/>
+            </svg>
+            <span>Residencial</span>
+          </button>
+          <button type="button" class="ib-type" data-tipo="empresarial" onclick="selectTipo(this)">
+            <svg class="ib-ico" viewBox="0 0 48 40" fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="6" y="12" width="14" height="24"/>
+              <rect x="26" y="4" width="16" height="32"/>
+              <path d="M10 18h6M10 24h6M10 30h6M30 12h8M30 18h8M30 24h8M30 30h8"/>
+            </svg>
+            <span>Empresarial</span>
+          </button>
+          <button type="button" class="ib-type" data-tipo="agronegocio" onclick="selectTipo(this)">
+            <svg class="ib-ico" viewBox="0 0 48 40" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M4 34V18l10-10 10 10v16H4z"/>
+              <path d="M24 34V14l12-10 12 10v20H24z"/>
+              <path d="M4 34h40"/>
+              <circle cx="38" cy="10" r="4"/>
+            </svg>
+            <span>Agronegócio</span>
+          </button>
+          <button type="button" class="ib-type" data-tipo="offgrid" onclick="selectTipo(this)">
+            <svg class="ib-ico" viewBox="0 0 48 40" fill="none" stroke="currentColor" stroke-width="1.4">
+              <circle cx="24" cy="14" r="8"/>
+              <path d="M24 2v3M24 23v3M12 14H9M39 14h-3M15 6l-2-2M35 6l2-2M15 22l-2 2M35 22l2 2"/>
+              <path d="M12 36c0-6 5.5-11 12-11s12 5 12 11"/>
+            </svg>
+            <span>Sem conexão<br>com a rede<br>elétrica</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="ib-step" id="step2">
+        <p class="ib-step-label">2. Onde pretende realizar a instalação?</p>
+        <div class="ib-field">
+          <input type="text" id="campoLocal" placeholder="Digite o CEP, cidade, bairro ou rua"
+            autocomplete="street-address" oninput="onLocalInput(this)">
+        </div>
+        <div class="ib-cep-status" id="cepStatus"></div>
+        <button type="button" class="ib-geo" onclick="usarLocalizacao()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          Usar minha localização ›
+        </button>
+      </div>
+
+      <div class="ib-step" id="step3">
+        <p class="ib-step-label">3. Quanto é o seu gasto médio mensal com conta de luz?</p>
+        <p class="ib-hint">*Dados fornecidos na sua conta de luz</p>
+        <div class="ib-field">
+          <input type="text" id="campoGasto" placeholder="R$*" inputmode="decimal"
+            oninput="onGastoInput(this)" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- OFFGRID: equipamentos + embarcações + motorhomes -->
+      <div class="ib-step" id="stepOffgrid" style="display:none">
+        <p class="ib-step-label" style="color:#00A86B">Para realizarmos o cálculo do consumo diário de energia, identifique os equipamentos utilizados.</p>
+        <p class="ib-step-label">3. Selecione os Equipamentos Utilizados.</p>
+
+        <div class="og-cats">
+          <div class="og-cat">
+            <label>Iluminação e Segurança</label>
+            <select id="eqIlum" multiple size="4" onchange="onEquipChange()">
+              <option value="lampada_led|10">Lâmpada LED 10W</option>
+              <option value="lampada_led|15">Lâmpada LED 15W</option>
+              <option value="refletor|50">Refletor LED 50W</option>
+              <option value="camera|8">Câmera de segurança 8W</option>
+              <option value="alarme|15">Alarme 15W</option>
+            </select>
+          </div>
+          <div class="og-cat">
+            <label>TV e Áudio</label>
+            <select id="eqTv" multiple size="4" onchange="onEquipChange()">
+              <option value="tv_32|50">TV 32" 50W</option>
+              <option value="tv_43|80">TV 43" 80W</option>
+              <option value="tv_55|120">TV 55" 120W</option>
+              <option value="som|40">Som / caixa 40W</option>
+              <option value="decoder|12">Decoder / streaming 12W</option>
+            </select>
+          </div>
+          <div class="og-cat">
+            <label>Informática</label>
+            <select id="eqInfo" multiple size="4" onchange="onEquipChange()">
+              <option value="notebook|65">Notebook 65W</option>
+              <option value="pc|200">PC desktop 200W</option>
+              <option value="monitor|30">Monitor 30W</option>
+              <option value="roteador|10">Roteador 10W</option>
+              <option value="impressora|40">Impressora 40W</option>
+            </select>
+          </div>
+          <div class="og-cat">
+            <label>Ar e Ventilação</label>
+            <select id="eqAr" multiple size="4" onchange="onEquipChange()">
+              <option value="ventilador|50">Ventilador 50W</option>
+              <option value="ar_9000|900">Ar 9.000 BTU ~900W</option>
+              <option value="ar_12000|1200">Ar 12.000 BTU ~1200W</option>
+              <option value="ar_18000|1800">Ar 18.000 BTU ~1800W</option>
+              <option value="exaustor|40">Exaustor 40W</option>
+            </select>
+          </div>
+          <div class="og-cat">
+            <label>Eletrodomésticos</label>
+            <select id="eqEletro" multiple size="4" onchange="onEquipChange()">
+              <option value="geladeira|150">Geladeira 150W</option>
+              <option value="freezer|200">Freezer 200W</option>
+              <option value="microondas|1200">Micro-ondas 1200W</option>
+              <option value="fogao_ind|2000">Fogão indução 2000W</option>
+              <option value="maquina_lavar|500">Máquina de lavar 500W</option>
+            </select>
+          </div>
+          <div class="og-cat">
+            <label>Eletroportáteis</label>
+            <select id="eqPort" multiple size="4" onchange="onEquipChange()">
+              <option value="liquidificador|400">Liquidificador 400W</option>
+              <option value="cafeteira|800">Cafeteira 800W</option>
+              <option value="ferro|1000">Ferro de passar 1000W</option>
+              <option value="aspirador|600">Aspirador 600W</option>
+              <option value="carregador|20">Carregadores 20W</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="og-warn" id="ogEquipWarn">Selecione no mínimo 1 equipamento</p>
+
+        <div class="og-quadrants">
+          <div class="og-quad">
+            <h4>Embarcações</h4>
+            <label class="ib-check"><input type="checkbox" id="chkEmbarcacao" onchange="toggleDim('embarcacao')"> Possui embarcação</label>
+            <div id="dimEmbarcacao" style="display:none" class="og-dims">
+              <input type="number" id="embComp" placeholder="Comprimento (m)" min="1" step="0.1" oninput="onEquipChange()">
+              <input type="number" id="embLarg" placeholder="Largura (m)" min="0.5" step="0.1" oninput="onEquipChange()">
+              <select id="embTipo" onchange="onEquipChange()">
+                <option value="">Tipo</option>
+                <option value="lancha">Lancha</option>
+                <option value="veleiro">Veleiro</option>
+                <option value="barco_pesca">Barco de pesca</option>
+                <option value="iate">Iate</option>
+                <option value="jetski">Jet ski</option>
+              </select>
+            </div>
+          </div>
+          <div class="og-quad">
+            <h4>MotorHomes / Trailers</h4>
+            <label class="ib-check"><input type="checkbox" id="chkMotorhome" onchange="toggleDim('motorhome')"> Possui MotorHome / Trailer</label>
+            <div id="dimMotorhome" style="display:none" class="og-dims">
+              <input type="number" id="mhComp" placeholder="Comprimento (m)" min="1" step="0.1" oninput="onEquipChange()">
+              <input type="number" id="mhLarg" placeholder="Largura (m)" min="0.5" step="0.1" oninput="onEquipChange()">
+              <select id="mhTipo" onchange="onEquipChange()">
+                <option value="">Tipo</option>
+                <option value="motorhome">MotorHome</option>
+                <option value="trailer">Trailer</option>
+                <option value="van">Van adaptada</option>
+                <option value="camionete">Camionete / Overland</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="og-summary" id="ogSummary" style="display:none">
+          <strong>Consumo estimado:</strong> <span id="ogWhDia">0</span> Wh/dia · <span id="ogKwhMes">0</span> kWh/mês
+        </div>
+      </div>
+
+      <div class="ib-step ib-step-contact" id="step4" style="display:none">
+        <p class="ib-contact-intro">
+          Insira seus dados abaixo e descubra o custo do seu gerador solar e quanto irá
+          economizar por ano! Em caso de áreas remotas entraremos em contato.
+        </p>
+        <div class="ib-field">
+          <label>Nome</label>
+          <input type="text" id="campoNome" placeholder="Seu nome completo" autocomplete="name" oninput="checkReady()">
+        </div>
+        <div class="ib-field">
+          <label>E-mail</label>
+          <input type="email" id="campoEmail" placeholder="seu@email.com" autocomplete="email" oninput="checkReady()">
+        </div>
+        <div class="ib-field">
+          <label>Celular</label>
+          <input type="tel" id="campoCelular" placeholder="(00) 00000-0000" autocomplete="tel"
+            oninput="formatPhone(this); checkReady()">
+        </div>
+        <div class="ib-field">
+          <label>Como nos conheceu?</label>
+          <select id="campoOrigem" onchange="checkReady()">
+            <option value="">Selecione</option>
+            <option value="google">Google</option>
+            <option value="instagram">Instagram</option>
+            <option value="facebook">Facebook</option>
+            <option value="youtube">Youtube</option>
+            <option value="indicacao">Indicação</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <div class="ib-checks">
+          <label class="ib-check">
+            <input type="checkbox" id="chkNews" checked>
+            <span>Tenho interesse em receber notícias, novidades e promoções.</span>
+          </label>
+          <label class="ib-check">
+            <input type="checkbox" id="chkPriv" onchange="checkReady()">
+            <span>Ao informar os meus dados, concordo com os termos da Política de Privacidade.</span>
+          </label>
+        </div>
+        <div class="ib-captcha">
+          <span class="ib-captcha-q" id="captchaQ">?</span>
+          <input type="number" id="captchaA" placeholder="=" oninput="checkReady()" inputmode="numeric">
+          <span class="ib-captcha-hint">Não sou um robô</span>
+        </div>
+        <input type="text" class="hp" id="hpField" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button type="button" class="ib-cta" id="btnSimular" disabled onclick="simular()">Simular ›</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ib-results" id="resultsWrap">
+    <div class="ib-results-inner">
+      <h2 class="ib-results-title">Resultado</h2>
+      <div class="ib-metrics">
+        <div class="ib-metric">
+          <div class="ico"></div>
+          <div class="lbl">Potência instalada*</div>
+          <div class="val" id="rPotencia">—</div>
+        </div>
+        <div class="ib-metric">
+          <div class="ico"></div>
+          <div class="lbl">Área mínima necessária*</div>
+          <div class="val" id="rArea">—</div>
+        </div>
+        <div class="ib-metric">
+          <div class="ico"></div>
+          <div class="lbl">Valor aproximado do sistema com instalação*.</div>
+          <div class="val" id="rValor">—</div>
+        </div>
+        <div class="ib-metric">
+          <div class="ico"></div>
+          <div class="lbl">Produção mensal*</div>
+          <div class="val" id="rProd">—</div>
+        </div>
+        <div class="ib-metric">
+          <div class="ico"></div>
+          <div class="lbl">Economia anual aproximada*</div>
+          <div class="val" id="rEcon">—</div>
+        </div>
+        <div class="ib-metric">
+          <div class="ico"></div>
+          <div class="lbl">Tempo aproximado de retorno do investimento*</div>
+          <div class="val" id="rPayback">—</div>
+        </div>
+        <div class="ib-metric" id="metricBat" style="display:none">
+          <div class="ico">🔋</div>
+          <div class="lbl">Bateria estimada (off-grid)*</div>
+          <div class="val" id="rBat">—</div>
+        </div>
+        <div class="ib-metric" id="metricWh" style="display:none">
+          <div class="ico">⚡</div>
+          <div class="lbl">Consumo diário estimado*</div>
+          <div class="val" id="rWh">—</div>
+        </div>
+      </div>
+      <div class="og-result-equip" id="ogResultEquip" style="display:none;max-width:720px;margin:0 auto 24px;text-align:left;font-size:.9rem;color:#5a6b66"></div>
+      <div class="ib-actions">
+        <button type="button" class="ib-btn-orange" onclick="solicitarOrcamento()">Solicitar Orçamento ›</button>
+        <div class="ib-actions-row">
+          <button type="button" class="ib-btn-outline" onclick="simularNovamente()">Simular Novamente ›</button>
+          <button type="button" class="ib-btn-outline" onclick="baixarSimulacao()">Baixar Simulação ›</button>
+        </div>
+      </div>
+      <div class="ib-info-box">
+        <div class="shield">🛡️</div>
+        <div>
+          Você pode adquirir seu sistema e realizar o pagamento em até <strong>21x*</strong> no cartão de crédito.
+          Ou você pode optar por um financiamento de até <strong>120x</strong> com um parceiro financeiro** de sua escolha.
+          <small>*Sujeito à cobrança de juros<br>**Consulte as condições dos bancos parceiros</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ib-toast" id="toast"></div>
+  <script src="/sim.js"></script>
+</body>
+</html>
