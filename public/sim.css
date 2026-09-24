@@ -155,7 +155,6 @@ body {
   margin: -10px 0 12px;
 }
 
-/* Type cards — leve como na foto */
 .ib-types {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -200,7 +199,6 @@ body {
   color: inherit;
 }
 
-/* Fields */
 .ib-field {
   max-width: 420px;
   margin: 0 auto 8px;
@@ -262,7 +260,6 @@ body {
 .ib-cep-status.ok { color: var(--green); }
 .ib-cep-status.err { color: #e53e3e; }
 
-/* Contact */
 .ib-contact-intro {
   font-size: .9rem;
   color: var(--muted);
@@ -471,4 +468,90 @@ body {
 }
 @media (max-width: 400px) {
   .ib-metrics { grid-template-columns: 1fr; }
+}
+
+/* ===== OFF-GRID equipamentos ===== */
+.og-cats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
+  max-width: 520px;
+  margin: 0 auto 16px;
+  text-align: left;
+}
+.og-cat label {
+  display: block;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--green-text);
+  margin-bottom: 6px;
+}
+.og-cat select {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: .85rem;
+  color: var(--text);
+  background: #fff;
+  min-height: 96px;
+}
+.og-cat select:focus {
+  border-color: var(--green);
+  outline: none;
+}
+.og-warn {
+  color: #e53e3e;
+  font-size: .85rem;
+  text-align: center;
+  margin: 8px 0 16px;
+  font-weight: 500;
+}
+.og-warn.ok { color: var(--green); }
+.og-quadrants {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  max-width: 520px;
+  margin: 20px auto;
+  text-align: left;
+}
+.og-quad {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #fafbfc;
+}
+.og-quad h4 {
+  font-size: .95rem;
+  color: var(--green-text);
+  margin-bottom: 10px;
+}
+.og-dims {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.og-dims input, .og-dims select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: .9rem;
+}
+.og-summary {
+  max-width: 520px;
+  margin: 16px auto;
+  padding: 12px 16px;
+  background: var(--green-soft);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--text);
+  font-size: .9rem;
+}
+@media (max-width: 600px) {
+  .og-cats, .og-quadrants { grid-template-columns: 1fr; }
 }
