@@ -13,6 +13,9 @@
     captchaN2: 0,
     captchaSum: 0,
     lastResult: null,
+    equipamentos: [],
+    whDia: 0,
+    dimensao: null,
   };
 
   const HSP = {
@@ -48,10 +51,89 @@
     setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
   }
 
+  /* Step 1 */
   window.selectTipo = function (el) {
     document.querySelectorAll('.ib-type').forEach((t) => t.classList.remove('selected'));
     el.classList.add('selected');
     state.tipo = el.getAttribute('data-tipo') || '';
+    const og = $('stepOffgrid');
+    const gastoStep = $('step3');
+    if (state.tipo === 'offgrid') {
+      if (og) og.style.display = 'block';
+      if (gastoStep) gastoStep.style.display = 'none';
+    } else {
+      if (og) og.style.display = 'none';
+      if (gastoStep) gastoStep.style.display = '';
+    }
+    tryShowContact();
+  };
+
+  window.toggleDim = function (kind) {
+    if (kind === 'embarcacao') {
+      const on = $('chkEmbarcacao') && $('chkEmbarcacao').checked;
+      if ($('dimEmbarcacao')) $('dimEmbarcacao').style.display = on ? 'flex' : 'none';
+    } else {
+      const on = $('chkMotorhome') && $('chkMotorhome').checked;
+      if ($('dimMotorhome')) $('dimMotorhome').style.display = on ? 'flex' : 'none';
+    }
+    onEquipChange();
+  };
+
+  window.onEquipChange = function () {
+    const ids = ['eqIlum','eqTv','eqInfo','eqAr','eqEletro','eqPort'];
+    const selected = [];
+    let watts = 0;
+    ids.forEach((id) => {
+      const sel = $(id);
+      if (!sel) return;
+      Array.from(sel.selectedOptions).forEach((opt) => {
+        const parts = (opt.value || '').split('|');
+        const w = parseFloat(parts[1]) || 0;
+        const hrs = id === 'eqAr' ? 6 : id === 'eqEletro' ? 4 : id === 'eqIlum' ? 5 : 3;
+        selected.push({ id: parts[0], nome: opt.text, watts: w, horas: hrs, wh: w * hrs });
+        watts += w * hrs;
+      });
+    });
+    const dim = {};
+    if ($('chkEmbarcacao') && $('chkEmbarcacao').checked) {
+      dim.embarcacao = {
+        tipo: ($('embTipo') && $('embTipo').value) || '',
+        comprimento: parseFloat($('embComp') && $('embComp').value) || 0,
+        largura: parseFloat($('embLarg') && $('embLarg').value) || 0,
+      };
+      const c = dim.embarcacao.comprimento || 5;
+      watts += c * 80;
+    }
+    if ($('chkMotorhome') && $('chkMotorhome').checked) {
+      dim.motorhome = {
+        tipo: ($('mhTipo') && $('mhTipo').value) || '',
+        comprimento: parseFloat($('mhComp') && $('mhComp').value) || 0,
+        largura: parseFloat($('mhLarg') && $('mhLarg').value) || 0,
+      };
+      const c = dim.motorhome.comprimento || 6;
+      watts += c * 100;
+    }
+    state.equipamentos = selected;
+    state.whDia = Math.round(watts);
+    state.dimensao = Object.keys(dim).length ? dim : null;
+    state.gasto = (state.whDia / 1000) * 30 * 0.95;
+
+    const warn = $('ogEquipWarn');
+    if (warn) {
+      if (selected.length < 1 && !state.dimensao) {
+        warn.textContent = 'Selecione no mínimo 1 equipamento';
+        warn.className = 'og-warn';
+      } else {
+        warn.textContent = selected.length + ' equipamento(s) selecionado(s)';
+        warn.className = 'og-warn ok';
+      }
+    }
+    const sum = $('ogSummary');
+    if (sum) {
+      sum.style.display = state.whDia > 0 ? 'block' : 'none';
+      if ($('ogWhDia')) $('ogWhDia').textContent = state.whDia.toLocaleString('pt-BR');
+      if ($('ogKwhMes')) $('ogKwhMes').textContent = Math.round(state.whDia * 30 / 1000).toLocaleString('pt-BR');
+    }
     tryShowContact();
   };
 
@@ -153,16 +235,17 @@
     const num = parseFloat(raw.replace(/\./g, '').replace(',', '.')) ||
       parseFloat(raw.replace(',', '.')) || 0;
     state.gasto = num;
-    if (num >= 50) {
-      input.classList.add('valid');
-    } else {
-      input.classList.remove('valid');
-    }
+    if (num >= 50) input.classList.add('valid');
+    else input.classList.remove('valid');
     tryShowContact();
   };
 
   function tryShowContact() {
-    if (state.tipo && state.local.length >= 5 && state.gasto >= 50) {
+    const localOk = state.local.length >= 5;
+    const gastoOk = state.tipo === 'offgrid'
+      ? (state.equipamentos.length >= 1 || state.dimensao)
+      : state.gasto >= 50;
+    if (state.tipo && localOk && gastoOk) {
       showContact();
       checkReady();
     }
@@ -188,7 +271,7 @@
     const ok =
       state.tipo &&
       state.local.length >= 5 &&
-      state.gasto >= 50 &&
+      (state.tipo === 'offgrid' ? (state.equipamentos.length >= 1 || state.dimensao) : state.gasto >= 50) &&
       nome.length >= 2 &&
       email.includes('@') &&
       cel.length >= 10 &&
@@ -211,15 +294,26 @@
   function calcular() {
     const tarifa = 0.95;
     const hsp = HSP[state.uf] || 4.8;
-    const consumoKwh = state.gasto / tarifa;
-    let kwp = (consumoKwh * 1.05) / (hsp * 30);
-    if (state.tipo === 'offgrid') kwp *= 1.35;
-    kwp = Math.max(1.2, Math.round(kwp * 10) / 10);
-    const area = Math.round(kwp * 6.5);
-    const custoKwp = state.tipo === 'offgrid' ? 7800 : 5200;
-    const custo = Math.round(kwp * custoKwp);
+    let consumoKwh, kwp, batKwh = 0;
+    if (state.tipo === 'offgrid' && state.whDia > 0) {
+      const whDia = state.whDia;
+      consumoKwh = (whDia * 30) / 1000;
+      kwp = (whDia * 1.3) / (hsp * 1000);
+      kwp = Math.max(0.4, Math.round(kwp * 100) / 100);
+      batKwh = Math.round((whDia * 2) / 500) / 10;
+    } else {
+      consumoKwh = state.gasto / tarifa;
+      kwp = (consumoKwh * 1.05) / (hsp * 30);
+      if (state.tipo === 'offgrid') kwp *= 1.35;
+      kwp = Math.max(1.2, Math.round(kwp * 10) / 10);
+    }
+    const area = Math.round(kwp * 6.5 * 10) / 10;
+    const custoKwp = state.tipo === 'offgrid' ? 9200 : 5200;
+    const custo = Math.round(kwp * custoKwp + batKwh * 1800);
     const geracaoMes = Math.round(kwp * hsp * 30);
-    const economiaMes = Math.min(state.gasto * 0.92, geracaoMes * tarifa * 0.95);
+    const economiaMes = state.tipo === 'offgrid'
+      ? consumoKwh * tarifa
+      : Math.min(state.gasto * 0.92, geracaoMes * tarifa * 0.95);
     const economiaAno = Math.round(economiaMes * 12);
     const paybackAnos = economiaAno > 0 ? (custo / economiaAno) : 0;
     const paybackStr = paybackAnos < 1
@@ -227,7 +321,8 @@
       : paybackAnos.toFixed(1).replace('.', ',') + ' anos';
     return {
       kwp, area, custo, geracaoMes, economiaAno,
-      payback: paybackStr, paybackAnos, tarifa, hsp,
+      payback: paybackStr, paybackAnos, tarifa, hsp, batKwh,
+      whDia: state.whDia,
       mode: state.tipo === 'offgrid' ? 'offgrid' : 'ongrid',
     };
   }
@@ -243,6 +338,35 @@
     $('rProd').textContent = r.geracaoMes.toLocaleString('pt-BR') + ' kWh';
     $('rEcon').textContent = fmtMoney(r.economiaAno);
     $('rPayback').textContent = r.payback;
+    const isOff = r.mode === 'offgrid';
+    const mb = $('metricBat');
+    const mw = $('metricWh');
+    if (mb) {
+      mb.style.display = isOff && r.batKwh ? '' : 'none';
+      if ($('rBat') && r.batKwh) $('rBat').textContent = r.batKwh + ' kWh';
+    }
+    if (mw) {
+      mw.style.display = isOff && r.whDia ? '' : 'none';
+      if ($('rWh') && r.whDia) $('rWh').textContent = r.whDia.toLocaleString('pt-BR') + ' Wh/dia';
+    }
+    const eqBox = $('ogResultEquip');
+    if (eqBox) {
+      if (isOff && ((state.equipamentos && state.equipamentos.length) || state.dimensao)) {
+        const lines = (state.equipamentos || []).map((e) => e.nome + ' (' + e.wh + ' Wh/dia)');
+        if (state.dimensao && state.dimensao.embarcacao) {
+          const e = state.dimensao.embarcacao;
+          lines.push('Embarcação ' + (e.tipo || '') + ' ' + e.comprimento + 'm × ' + e.largura + 'm');
+        }
+        if (state.dimensao && state.dimensao.motorhome) {
+          const e = state.dimensao.motorhome;
+          lines.push('MotorHome/Trailer ' + (e.tipo || '') + ' ' + e.comprimento + 'm × ' + e.largura + 'm');
+        }
+        eqBox.innerHTML = '<strong>Equipamentos considerados:</strong><br>' + lines.join('<br>');
+        eqBox.style.display = 'block';
+      } else {
+        eqBox.style.display = 'none';
+      }
+    }
     $('formWrap').style.display = 'none';
     $('resultsWrap').classList.add('show');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -257,7 +381,10 @@
     const celular = ($('campoCelular').value || '').replace(/\D/g, '');
     const origem = ($('campoOrigem') && $('campoOrigem').value) || '';
 
-    if (!state.tipo || state.gasto < 50 || nome.length < 2 || celular.length < 10) {
+    const gastoOk = state.tipo === 'offgrid'
+      ? (state.equipamentos.length >= 1 || state.dimensao)
+      : state.gasto >= 50;
+    if (!state.tipo || !gastoOk || nome.length < 2 || celular.length < 10) {
       toast('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -283,6 +410,8 @@
         kwp: r.kwp, area: r.area, custo: r.custo,
         geracaoMes: r.geracaoMes, economiaAno: r.economiaAno, payback: r.payback,
         origem, source: 'simulador', tipoLocal: state.tipo,
+        equipamentos: state.equipamentos, dimensao: state.dimensao, whDia: state.whDia,
+        batKwh: r.batKwh,
         humanVerified: true, captchaOk: true,
         captcha: cap, captchaExpected: state.captchaSum,
         website: '', ts: new Date().toISOString(),
