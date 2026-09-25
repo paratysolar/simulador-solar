@@ -31,7 +31,9 @@ export async function ensureSchema() {
     kwp NUMERIC, modulos INT, inversor TEXT, baterias JSONB, area_m2 NUMERIC, geracao_mes NUMERIC,
     economia_ano NUMERIC, investimento NUMERIC, payback_anos NUMERIC, itens JSONB DEFAULT '[]'::jsonb,
     total NUMERIC, validade_dias INT DEFAULT 15, status TEXT DEFAULT 'rascunho', pdf_url TEXT,
-    created_by TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
+    created_by TEXT, payload JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
+  try { await q`ALTER TABLE proposals ADD COLUMN IF NOT EXISTS payload JSONB DEFAULT '{}'::jsonb`; } catch (_) {}
   await q`CREATE TABLE IF NOT EXISTS crm_meta (
     lead_id TEXT PRIMARY KEY, stage TEXT DEFAULT 'novo', tags TEXT[] DEFAULT '{}', notes TEXT,
     value NUMERIC DEFAULT 0, data JSONB DEFAULT '{}'::jsonb, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
@@ -58,8 +60,26 @@ export async function listLeads({ limit = 100, stage } = {}) {
 export async function insertProposal(row) {
   await ensureSchema();
   const id = row.id || `prop-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  await sql()`INSERT INTO proposals (id,lead_id,mode,cliente_nome,cliente_telefone,cliente_email,endereco,cidade,uf,consumo_kwh,gasto_rs,kwp,modulos,inversor,baterias,area_m2,geracao_mes,economia_ano,investimento,payback_anos,itens,total,validade_dias,status,created_by)
-    VALUES (${id},${row.lead_id||null},${row.mode},${row.cliente_nome||null},${row.cliente_telefone||null},${row.cliente_email||null},${row.endereco||null},${row.cidade||null},${row.uf||null},${row.consumo_kwh??null},${row.gasto_rs??null},${row.kwp??null},${row.modulos??null},${row.inversor||null},${row.baterias?JSON.stringify(row.baterias):null},${row.area_m2??null},${row.geracao_mes??null},${row.economia_ano??null},${row.investimento??null},${row.payback_anos??null},${JSON.stringify(row.itens||[])},${row.total??null},${row.validade_dias??15},${row.status||'rascunho'},${row.created_by||null})`;
+  const payload = {
+    num_proposta: row.num_proposta,
+    validade: row.validade,
+    geracaoMensal: row.geracaoMensal,
+    consumoMensal: row.consumoMensal,
+    meses: row.meses,
+    paybackTable: row.paybackTable,
+    financiamento: row.financiamento,
+    grid_zero: row.grid_zero,
+    notes: row.notes,
+    modulo_w: row.modulo_w,
+    geracao_anual: row.geracao_anual,
+    economia_mes: row.economia_mes,
+    subtotal_equip: row.subtotal_equip,
+    servico: row.servico,
+    tarifa: row.tarifa,
+    hsp: row.hsp,
+  };
+  await sql()`INSERT INTO proposals (id,lead_id,mode,cliente_nome,cliente_telefone,cliente_email,endereco,cidade,uf,consumo_kwh,gasto_rs,kwp,modulos,inversor,baterias,area_m2,geracao_mes,economia_ano,investimento,payback_anos,itens,total,validade_dias,status,created_by,payload)
+    VALUES (${id},${row.lead_id||null},${row.mode},${row.cliente_nome||null},${row.cliente_telefone||null},${row.cliente_email||null},${row.endereco||null},${row.cidade||null},${row.uf||null},${row.consumo_kwh??null},${row.gasto_rs??null},${row.kwp??null},${row.modulos??null},${row.inversor||null},${row.baterias?JSON.stringify(row.baterias):null},${row.area_m2??null},${row.geracao_mes??null},${row.economia_ano??null},${row.investimento??null},${row.payback_anos??null},${JSON.stringify(row.itens||[])},${row.total??null},${row.validade_dias??15},${row.status||'rascunho'},${row.created_by||null},${JSON.stringify(payload)})`;
   return id;
 }
 export async function listProposals({ limit = 50 } = {}) {
