@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { STYLES } from './prop-styles';
 
-/* Fotos reais Paraty Solar — public/prop-photos */
+/* Fotos reais Paraty Solar */
 const PHOTOS = {
   cover1: '/prop-photos/20250211_161337.jpg',
   cover2: '/prop-photos/WhatsApp_Image_2026-09-06_at_153548.jpg',
@@ -68,14 +68,7 @@ function ChartRetorno({ total, economia_ano }) {
       <div className="bar-chart">
         {bars.map((b) => (
           <div key={b.y} className="bar-col">
-            <div
-              className="bar"
-              style={{
-                height: `${(Math.abs(b.v) / maxAbs) * 160}px`,
-                background: b.v >= 0 ? '#5b9bd5' : '#e74c3c',
-              }}
-              title={`Ano ${b.y}: ${fmt(b.v)}`}
-            />
+            <div className="bar" style={{ height: `${(Math.abs(b.v) / maxAbs) * 160}px`, background: b.v >= 0 ? '#5b9bd5' : '#e74c3c' }} title={`Ano ${b.y}: ${fmt(b.v)}`} />
             <span className="bar-lbl">{b.y}</span>
           </div>
         ))}
@@ -113,15 +106,10 @@ export default function PropPage() {
         body: JSON.stringify({ password: pwd }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setLoginErr(data.error || 'Falha no login');
-        return;
-      }
+      if (!res.ok) { setLoginErr(data.error || 'Falha no login'); return; }
       sessionStorage.setItem('prop_auth', pwd);
       setAuth(pwd);
-    } catch {
-      setLoginErr('Erro de conexão');
-    }
+    } catch { setLoginErr('Erro de conexão'); }
   }
 
   async function loadList() {
@@ -132,49 +120,34 @@ export default function PropPage() {
     } catch {}
   }
 
-  useEffect(() => {
-    if (auth) loadList();
-  }, [auth]);
+  useEffect(() => { if (auth) loadList(); }, [auth]);
 
   async function gerar(e) {
     e.preventDefault();
-    setBusy(true);
-    setErr('');
-    setResult(null);
+    setBusy(true); setErr(''); setResult(null);
     try {
       const res = await fetch('/api/prop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-prop-auth': auth },
         body: JSON.stringify({
-          mode,
-          ...form,
+          mode, ...form,
           gasto_rs: form.gasto_rs ? Number(form.gasto_rs) : 0,
           wh_dia: form.wh_dia ? Number(form.wh_dia) : 0,
           tarifa: form.tarifa ? Number(form.tarifa) : 0.95,
         }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setErr(data.error || data.hint || 'Erro ao gerar');
-        return;
-      }
+      if (!res.ok) { setErr(data.error || data.hint || 'Erro ao gerar'); return; }
       const p = data.proposal;
       const full = p.payload ? { ...p, ...(typeof p.payload === 'string' ? JSON.parse(p.payload) : p.payload) } : p;
       setResult({ ...full, cliente_nome: form.cliente_nome, cidade: form.cidade, uf: form.uf, cliente_telefone: form.cliente_telefone });
       loadList();
       setTimeout(() => document.getElementById('proposta')?.scrollIntoView({ behavior: 'smooth' }), 200);
-    } catch (ex) {
-      setErr(String(ex.message || ex));
-    } finally {
-      setBusy(false);
-    }
+    } catch (ex) { setErr(String(ex.message || ex)); }
+    finally { setBusy(false); }
   }
 
-  function logout() {
-    sessionStorage.removeItem('prop_auth');
-    setAuth('');
-  }
-
+  function logout() { sessionStorage.removeItem('prop_auth'); setAuth(''); }
   function openProposal(p) {
     const full = p.payload ? { ...p, ...(typeof p.payload === 'string' ? JSON.parse(p.payload) : p.payload) } : p;
     setResult(full);
@@ -230,54 +203,28 @@ export default function PropPage() {
           </div>
           <form onSubmit={gerar}>
             <div className="row">
-              <div>
-                <label>Nome do cliente</label>
-                <input required value={form.cliente_nome} onChange={(e) => setForm({ ...form, cliente_nome: e.target.value })} />
-              </div>
-              <div>
-                <label>Celular / WhatsApp</label>
-                <input required value={form.cliente_telefone} onChange={(e) => setForm({ ...form, cliente_telefone: e.target.value })} />
-              </div>
+              <div><label>Nome do cliente</label><input required value={form.cliente_nome} onChange={(e) => setForm({ ...form, cliente_nome: e.target.value })} /></div>
+              <div><label>Celular / WhatsApp</label><input required value={form.cliente_telefone} onChange={(e) => setForm({ ...form, cliente_telefone: e.target.value })} /></div>
             </div>
             <div className="row">
-              <div>
-                <label>E-mail</label>
-                <input type="email" value={form.cliente_email} onChange={(e) => setForm({ ...form, cliente_email: e.target.value })} />
-              </div>
-              <div>
-                <label>UF</label>
-                <input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} />
-              </div>
+              <div><label>E-mail</label><input type="email" value={form.cliente_email} onChange={(e) => setForm({ ...form, cliente_email: e.target.value })} /></div>
+              <div><label>UF</label><input maxLength={2} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} /></div>
             </div>
             <label>Endereço</label>
             <input value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
             <div className="row">
-              <div>
-                <label>Cidade</label>
-                <input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} />
-              </div>
+              <div><label>Cidade</label><input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} /></div>
               {mode === 'offgrid' ? (
-                <div>
-                  <label>Consumo diário (Wh/dia)</label>
-                  <input type="number" min="50" value={form.wh_dia} onChange={(e) => setForm({ ...form, wh_dia: e.target.value })} required />
-                </div>
+                <div><label>Consumo diário (Wh/dia)</label><input type="number" min="50" value={form.wh_dia} onChange={(e) => setForm({ ...form, wh_dia: e.target.value })} required /></div>
               ) : (
-                <div>
-                  <label>Gasto médio mensal (R$)</label>
-                  <input type="number" min="50" value={form.gasto_rs} onChange={(e) => setForm({ ...form, gasto_rs: e.target.value })} required />
-                </div>
+                <div><label>Gasto médio mensal (R$)</label><input type="number" min="50" value={form.gasto_rs} onChange={(e) => setForm({ ...form, gasto_rs: e.target.value })} required /></div>
               )}
             </div>
             <div className="row">
-              <div>
-                <label>Tarifa (R$/kWh)</label>
-                <input type="number" step="0.01" min="0.3" value={form.tarifa} onChange={(e) => setForm({ ...form, tarifa: e.target.value })} />
-              </div>
+              <div><label>Tarifa (R$/kWh)</label><input type="number" step="0.01" min="0.3" value={form.tarifa} onChange={(e) => setForm({ ...form, tarifa: e.target.value })} /></div>
             </div>
             {err && <p className="err">{err}</p>}
-            <button className="btn" type="submit" disabled={busy}>
-              {busy ? 'Gerando…' : 'Gerar proposta comercial ›'}
-            </button>
+            <button className="btn" type="submit" disabled={busy}>{busy ? 'Gerando…' : 'Gerar proposta comercial ›'}</button>
           </form>
         </div>
 
@@ -331,10 +278,9 @@ export default function PropPage() {
                 <h3 className="sec-title green">Descrição Geral</h3>
                 <p className="body">Projeto que visa a implementação de um sistema de geração fotovoltaico {r.mode === 'offgrid' ? 'off-grid (autônomo)' : r.mode === 'hibrido' ? 'híbrido' : 'distribuído (on-grid)'}, a fim de {r.mode === 'offgrid' ? 'suprir o consumo local com autonomia energética' : 'gerar créditos energéticos que serão compensados na fatura de energia elétrica'}, trazendo sustentabilidade e uma economia significativa no valor da energia.</p>
                 <h3 className="sec-title green">Requisitos de Implementação</h3>
-                <p className="body">Para a implementação do sistema, a limitação se dá pelo número de módulos, no caso dimensionado, <strong>{r.modulos} módulos</strong> ({r.modulo_w || 450}W), os quais necessitam uma área de aproximadamente <strong>{r.area_m2} m²</strong>.</p>
+                <p className="body">Para a implementação do sistema, a limitação se dá pelo número de módulos, no caso dimensionado, <strong>{r.modulos} módulos</strong> ({r.modulo_w || 550}W), os quais necessitam uma área de aproximadamente <strong>{r.area_m2} m²</strong>.</p>
                 <h3 className="sec-title green">Instalação e Homologação</h3>
-                <p className="body">A proposta conta com o projeto elétrico e a instalação do sistema. Para uma correta instalação há necessidade de avaliação e inspeção prévia, tendo um profissional responsável pelo projeto.</p>
-                <p className="body">{r.mode !== 'offgrid' && 'A homologação do sistema junto à concessionária está contemplada, com orientações em relação aos procedimentos a serem tomados com a companhia elétrica. '}Dimensionamento alinhado à <strong>Lei 14.300/22</strong> e resoluções ANEEL.{r.grid_zero ? ' Sistema elegível a grid-zero (até 7,5 kWp).' : ''}</p>
+                <p className="body">A proposta conta com o projeto elétrico e a instalação do sistema. Dimensionamento alinhado à <strong>Lei 14.300/22</strong> e resoluções ANEEL.{r.grid_zero ? ' Sistema elegível a grid-zero (até 7,5 kWp).' : ''}</p>
                 <div className="page-num">2</div>
               </div>
             </div>
@@ -381,12 +327,11 @@ export default function PropPage() {
                       <li>10× {fmt(parcela10)} (cartão)</li>
                       <li>6× {fmt(r.financiamento?.parcela_6x_sem_juros || Math.round((r.total || 0) / 6))} sem juros</li>
                     </ul>
-                    <p style={{ fontSize: '.8rem', marginTop: 10, color: '#555' }}>Aqui você troca uma <strong>dívida</strong> por um <strong>investimento</strong>. O valor mensal que antes ia para a conta de luz passa a pagar o sistema.</p>
                   </div>
                   <div className="box highlight">
                     <h4>💰 À VISTA</h4>
                     <div className="big-price" style={{ margin: '8px 0' }}>{fmt(r.total)}</div>
-                    <p style={{ fontSize: '.8rem', color: '#555' }}>Aqui você investe e o retorno começa no primeiro mês de geração.</p>
+                    <p style={{ fontSize: '.8rem', color: '#555' }}>Sem juros · melhor payback</p>
                   </div>
                 </div>
                 <div className="page-num">3</div>
@@ -399,15 +344,9 @@ export default function PropPage() {
                   <div className="brand">Paraty <span>Solar</span></div>
                   <div style={{ fontSize: '.8rem', color: 'var(--m)' }}>{r.num_proposta || r.id}</div>
                 </div>
-                <h3 className="sec-title">Geração × Consumo</h3>
-                <ChartGeracao meses={r.meses || ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']} geracao={r.geracao_mensal || []} consumo={r.consumo_mensal || []} />
-                <div className="kpi-row" style={{ marginTop: 20 }}>
-                  <div className="kpi"><div className="kpi-v">{r.modulos}</div><div className="kpi-l">Módulos</div></div>
-                  <div className="kpi"><div className="kpi-v">{r.kwp} kWp</div><div className="kpi-l">Potência</div></div>
-                  <div className="kpi"><div className="kpi-v">{r.area_m2} m²</div><div className="kpi-l">Área</div></div>
-                  <div className="kpi"><div className="kpi-v">{fmt(r.economia_ano)}</div><div className="kpi-l">Economia/ano</div></div>
-                </div>
-                <ChartRetorno total={r.total} economia_ano={r.economia_ano} />
+                <h3 className="sec-title">Dimensionamento e Economia</h3>
+                <p className="body">Kit de <strong>{r.kwp} kWp</strong> · economia estimada <strong>{fmt(r.economia_mes)}</strong>/mês · <strong>{fmt(r.economia_ano)}</strong>/ano · payback ~<strong>{r.payback_anos} anos</strong>.</p>
+                <ChartGeracao meses={r.meses} geracao={r.geracaoMensal} consumo={r.consumoMensal} />
                 <div className="page-num">4</div>
               </div>
             </div>
@@ -418,23 +357,30 @@ export default function PropPage() {
                   <div className="brand">Paraty <span>Solar</span></div>
                   <div style={{ fontSize: '.8rem', color: 'var(--m)' }}>{r.num_proposta || r.id}</div>
                 </div>
-                <h3 className="sec-title">Lista de Materiais (BOM)</h3>
-                <table className="bom">
-                  <thead><tr><th>Item</th><th>Qtd</th><th>Unit.</th><th>Total</th></tr></thead>
+                <h3 className="sec-title">Composição do Sistema</h3>
+                <p className="body" style={{ marginBottom: 12 }}>
+                  Investimento turnkey competitivo: <strong>{r.preco_kwp_label || (r.preco_kwp ? `R$ ${Number(r.preco_kwp).toLocaleString('pt-BR')}/kWp` : '')}</strong>
+                  {' '}· {r.kwp} kWp · alinhado ao mercado 2026 (referência Leroy / Solfácil).
+                </p>
+                <table className="bom-table">
+                  <thead><tr><th>Item</th><th>Marca</th><th>Qtd</th></tr></thead>
                   <tbody>
                     {(r.itens || []).map((it, i) => (
-                      <tr key={i}><td>{it.nome || it.desc}</td><td>{it.qtd}</td><td>{fmt(it.preco || it.unit)}</td><td>{fmt(it.total || (it.qtd * (it.preco || it.unit || 0)))}</td></tr>
+                      <tr key={i}><td>{it.item}</td><td>{it.marca || '—'}</td><td>{it.qtd}</td></tr>
                     ))}
+                    <tr className="tot-row">
+                      <td colSpan={2}>Investimento total (equipamentos + instalação + homologação)</td>
+                      <td style={{ whiteSpace: 'nowrap' }}>{fmt(r.total)}</td>
+                    </tr>
                   </tbody>
-                  <tfoot><tr><td colSpan={3}><strong>Total do investimento</strong></td><td><strong>{fmt(r.total)}</strong></td></tr></tfoot>
                 </table>
-                <h3 className="sec-title" style={{ marginTop: 24 }}>Análise financeira</h3>
-                <div className="kpi-row">
-                  <div className="kpi"><div className="kpi-v">{r.payback || '—'}</div><div className="kpi-l">Payback</div></div>
-                  <div className="kpi"><div className="kpi-v">{fmt(r.economia_ano)}</div><div className="kpi-l">Economia anual</div></div>
-                  <div className="kpi"><div className="kpi-v">{fmt(lucro15)}</div><div className="kpi-l">Lucro 15 anos*</div></div>
-                </div>
-                <p style={{ fontSize: '.75rem', color: 'var(--m)', marginTop: 8 }}>* Estimativa com reajuste tarifário ~6%/ano e degradação ~0,5%/ano.</p>
+                <p className="body" style={{ marginTop: 10, fontSize: '.85rem', color: 'var(--m)' }}>
+                  Preço por kWp instalado: <strong>{fmt(r.preco_kwp || (r.total && r.kwp ? r.total / r.kwp : 0))}/kWp</strong>.
+                  Valor competitivo frente a kits de varejo (Leroy e similares), com projeto, instalação e homologação inclusos.
+                </p>
+                <h3 className="sec-title" style={{ marginTop: 24 }}>Retorno de Investimento</h3>
+                <p className="body">Payback simples em aproximadamente <strong>{r.payback_anos} anos</strong>. Em 15 anos, retorno acumulado estimado da ordem de <strong>{fmt(Math.max(0, lucro15))}</strong>.</p>
+                <ChartRetorno total={r.total} economia_ano={r.economia_ano} />
                 <div className="page-num">5</div>
               </div>
             </div>
@@ -445,23 +391,18 @@ export default function PropPage() {
                   <div className="brand">Paraty <span>Solar</span></div>
                   <div style={{ fontSize: '.8rem', color: 'var(--m)' }}>{r.num_proposta || r.id}</div>
                 </div>
-                <h3 className="sec-title">Portfólio de instalações</h3>
-                <div className="portfolio">
-                  {PHOTOS.portfolio.map((ph, i) => (
-                    <div key={i} className="port-card">
-                      <img src={ph.src} alt={ph.seg} loading="lazy" />
-                      <div className="port-info">
-                        <strong>{ph.seg}</strong> · {ph.cid}<br />
-                        {ph.mod !== '—' && <>{ph.mod} módulos · {ph.gen} kWh/mês · {ph.econ}/mês</>}
-                        {ph.mod === '—' && ph.econ}
-                      </div>
+                <h3 className="sec-title">Portfólio e Equipe</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                  {PHOTOS.portfolio.slice(0, 6).map((p, i) => (
+                    <div key={i}>
+                      <img src={p.src} alt={p.seg} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} loading="lazy" />
+                      <div style={{ fontSize: '.7rem', marginTop: 4 }}>{p.seg} · {p.cid}</div>
                     </div>
                   ))}
                 </div>
-                <h3 className="sec-title" style={{ marginTop: 20 }}>Nossa equipe</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                   {PHOTOS.team.map((src, i) => (
-                    <img key={i} src={src} alt="Equipe Paraty Solar" style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 10 }} loading="lazy" />
+                    <img key={i} src={src} alt="Equipe Paraty Solar" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 10 }} loading="lazy" />
                   ))}
                 </div>
                 <div className="page-num">6</div>
@@ -474,33 +415,23 @@ export default function PropPage() {
                   <div className="brand">Paraty <span>Solar</span></div>
                   <div style={{ fontSize: '.8rem', color: 'var(--m)' }}>{r.num_proposta || r.id}</div>
                 </div>
-                <h3 className="sec-title">Notas técnicas e comerciais</h3>
-                <ul className="notes">
-                  <li>Dimensionamento alinhado à <strong>Lei 14.300/22</strong> e resoluções ANEEL.</li>
-                  <li>Sistemas até 7,5 kWp elegíveis a <strong>grid-zero</strong> (fast-track).</li>
-                  <li>Troca de titularidade / troca de conta: orientamos o processo junto à concessionária.</li>
-                  <li>Carência e prazos de financiamento conforme linha bancária escolhida.</li>
-                  <li>Valorização do imóvel: sistemas solares aumentam o atrativo de venda/locação.</li>
-                  <li>Garantias dos equipamentos conforme fabricante (módulos tipicamente 25 anos).</li>
-                  <li>Proposta válida por 15 dias. Valores sujeitos a confirmação de disponibilidade.</li>
+                <h3 className="sec-title">Considerações Finais</h3>
+                <ul className="notes-list">
+                  <li>{r.notes?.lei || 'Dimensionamento alinhado à Lei 14.300/22 e REN ANEEL.'}</li>
+                  <li>{r.notes?.garantia_modulos || '15 anos produto / 30 anos performance (módulos).'}</li>
+                  <li>{r.notes?.garantia_inversor || '5–10 anos de garantia do inversor.'}</li>
+                  <li>{r.notes?.preco || 'Investimento turnkey competitivo por kWp.'}</li>
                   {r.grid_zero && <li>Sistema elegível a <strong>grid-zero</strong> (potência ≤ 7,5 kWp).</li>}
                 </ul>
-
                 <div className="signature">
                   <p className="body" style={{ textAlign: 'left' }}>Atenciosamente,</p>
                   <div className="line" />
                   <div className="name">Paraty Solar</div>
                   <div style={{ fontSize: '.85rem', color: 'var(--m)' }}>Equipe Comercial</div>
-                  <div style={{ marginTop: 24, fontSize: '.85rem', color: 'var(--m)' }}>
-                    {[r.cidade, r.uf].filter(Boolean).join(' / ') || 'Paraty - RJ'}
-                    {r.validade ? ` · Validade até ${r.validade}` : ''}
-                  </div>
                 </div>
-
                 <div className="footer-brand">
                   <div className="name">Paraty <span>Solar</span></div>
                   <div className="contact">
-                    Energia solar com instalação e suporte local<br />
                     WhatsApp (12) 99705-4541 · contato@paratysolar.com.br · www.paratysolar.com.br<br />
                     Paraty – RJ · Costa Verde
                   </div>
@@ -511,18 +442,56 @@ export default function PropPage() {
           </div>
         )}
 
-        <div className="card no-print">
-          <h3 style={{ marginBottom: 12 }}>Últimas propostas</h3>
-          {!list.length && <p style={{ color: 'var(--m)', fontSize: '.9rem' }}>Nenhuma proposta gerada ainda.</p>}
-          {list.slice(0, 8).map((p) => (
-            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => openProposal(p)}>
+        <div className="card no-print" id="gestao">
+          <h3 style={{ marginBottom: 8 }}>Gestão de Propostas</h3>
+          <p className="sub" style={{ marginBottom: 16 }}>
+            Propostas geradas ficam registradas aqui. Precificação por kWp competitiva (referência mercado 2026 / Leroy).
+          </p>
+          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 12, padding: 14, marginBottom: 18 }}>
+            <div style={{ fontWeight: 700, marginBottom: 8, color: 'var(--g)' }}>💰 Tabela R$/kWp instalado (turnkey)</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, fontSize: '.85rem' }}>
               <div>
-                <strong>{p.cliente_nome || 'Cliente'}</strong>
-                <div style={{ fontSize: '.8rem', color: 'var(--m)' }}>{p.num_proposta || p.id} · {p.mode}</div>
+                <strong>On-Grid</strong>
+                <div>≤4 kWp: R$ 3.100</div>
+                <div>4–8: R$ 2.900</div>
+                <div>8–15: R$ 2.700</div>
+                <div>&gt;15: R$ 2.550</div>
               </div>
-              <div style={{ fontWeight: 700, color: 'var(--g)' }}>{fmt(p.total)}</div>
+              <div>
+                <strong>Híbrido</strong>
+                <div>≤4: R$ 4.200</div>
+                <div>4–8: R$ 3.900</div>
+                <div>8–15: R$ 3.600</div>
+                <div>&gt;15: R$ 3.400</div>
+              </div>
+              <div>
+                <strong>Off-Grid</strong>
+                <div>≤4: R$ 5.200</div>
+                <div>4–8: R$ 4.800</div>
+                <div>8–15: R$ 4.500</div>
+                <div>&gt;15: R$ 4.200</div>
+              </div>
             </div>
-          ))}
+            <p style={{ fontSize: '.78rem', color: '#555', marginTop: 10, marginBottom: 0 }}>
+              Mercado 2026: Solfácil ~R$ 2,45/Wp · Solar Task mediana ~R$ 2,74/Wp. Paraty Solar na faixa competitiva com instalação e homologação inclusas.
+            </p>
+          </div>
+          <h4 style={{ marginBottom: 10 }}>Propostas registradas ({list.length})</h4>
+          {!list.length && <p className="sub">Nenhuma proposta ainda (ou banco não configurado).</p>}
+          <ul className="list">
+            {list.map((p) => (
+              <li key={p.id} onClick={() => openProposal(p)} style={{ cursor: 'pointer' }}>
+                <span>
+                  <strong>{p.cliente_nome || p.id}</strong>
+                  {' · '}{p.mode}{' · '}{p.kwp} kWp
+                  {p.status ? ` · ${p.status}` : ''}
+                  {p.cidade ? ` · ${p.cidade}` : ''}
+                </span>
+                <span style={{ fontWeight: 700, color: 'var(--g)' }}>{fmt(p.total || p.investimento)}</span>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="btn-out" style={{ marginTop: 12 }} onClick={loadList}>Atualizar lista</button>
         </div>
       </div>
     </>
