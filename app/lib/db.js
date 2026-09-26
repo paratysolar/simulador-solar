@@ -48,7 +48,7 @@ export async function insertLead(row) {
   const id = row.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const phone = row.telefone || row.celular || row.contato;
   await sql()`INSERT INTO leads (id,source,mode,tipo_local,nome,email,telefone,cep,endereco,cidade,uf,gasto,equipamentos,dimensao,wh_dia,kwp,area,custo,geracao_mes,economia_ano,payback,bat_kwh,stage,tags,meta)
-    VALUES (${id},${row.source||'simulador'},${row.mode},${row.tipoLocal||row.tipo_local||null},${row.nome},${row.email||null},${phone},${row.cep||null},${row.endereco||row.local||row.logradouro||null},${row.cidade||null},${row.uf||null},${row.gasto??null},${JSON.stringify(row.equipamentos||[])},${row.dimensao?JSON.stringify(row.dimensao):null},${row.whDia??row.wh_dia??null},${row.kwp??null},${row.area??null},${row.custo??null},${row.geracaoMes??row.geracao_mes??null},${row.economiaAno??row.economia_ano??null},${row.payback||null},${row.batKwh??row.bat_kwh??null},${row.stage||'novo'},${row.tags||['simulador']},${JSON.stringify(row.meta||{})})
+    VALUES (${id},${row.source||'simulador'},${row.mode},${row.tipoLocal||row.tipo_local||null},${row.nome},${row.email||null},${phone},${row.cep||null},${row.endereco||row.local||row.logradouro||null},${row.cidade||null},${row.uf||null},${row.gasto??null},${JSON.stringify(row.equipamentos||[])},${row.dimensao?JSON.stringify(row.dimensao):null},${row.whDia??row.wh_dia??null},${row.kwp??null},${row.area??null},${row.custo??null},${row.geracaoMes??row.geracao_mes??null},${row.economiaAno??row.economia_ano||null},${row.payback||null},${row.batKwh??row.bat_kwh??null},${row.stage||'novo'},${row.tags||['simulador']},${JSON.stringify(row.meta||{})})
     ON CONFLICT (id) DO UPDATE SET updated_at=NOW(), meta=EXCLUDED.meta`;
   return id;
 }
@@ -77,6 +77,8 @@ export async function insertProposal(row) {
     servico: row.servico,
     tarifa: row.tarifa,
     hsp: row.hsp,
+    preco_kwp: row.preco_kwp,
+    preco_kwp_label: row.preco_kwp_label,
   };
   await sql()`INSERT INTO proposals (id,lead_id,mode,cliente_nome,cliente_telefone,cliente_email,endereco,cidade,uf,consumo_kwh,gasto_rs,kwp,modulos,inversor,baterias,area_m2,geracao_mes,economia_ano,investimento,payback_anos,itens,total,validade_dias,status,created_by,payload)
     VALUES (${id},${row.lead_id||null},${row.mode},${row.cliente_nome||null},${row.cliente_telefone||null},${row.cliente_email||null},${row.endereco||null},${row.cidade||null},${row.uf||null},${row.consumo_kwh??null},${row.gasto_rs??null},${row.kwp??null},${row.modulos??null},${row.inversor||null},${row.baterias?JSON.stringify(row.baterias):null},${row.area_m2??null},${row.geracao_mes??null},${row.economia_ano??null},${row.investimento??null},${row.payback_anos??null},${JSON.stringify(row.itens||[])},${row.total??null},${row.validade_dias??15},${row.status||'rascunho'},${row.created_by||null},${JSON.stringify(payload)})`;
