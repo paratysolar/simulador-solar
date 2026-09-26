@@ -1,6 +1,8 @@
 /**
- * Catálogo e dimensionamento com preços reais Intelbras (ago/2026).
- * Baseado em propostas reais: Neném, Rodrigo, Neir, Arthur, Geraldo.
+ * Precificação competitiva por kWp — alinhada ao mercado 2026 (Leroy / Solfácil / Solar Task).
+ * Cliente vê investimento total e R$/kWp, NÃO lista unitária detalhada.
+ * Referência mercado: R$ 2.450–3.500/kWp instalado (Solfácil R$ 2,45/Wp).
+ * Paraty Solar: agressivo e competitivo na Costa Verde/RJ.
  */
 
 export const HSP = {
@@ -10,9 +12,32 @@ export const HSP = {
   SP: 4.7, SE: 5.3, TO: 5.2,
 };
 
-/** Preços unitários aproximados extraídos dos kits reais */
+/** Tabela de preço por kWp instalado (tudo incluso: equipamentos + instalação + homologação) */
+export const PRECO_KWP = {
+  ongrid: {
+    base: 3100,
+    mid: 2900,
+    large: 2700,
+    xl: 2550,
+  },
+  offgrid: {
+    base: 5200,
+    mid: 4800,
+    large: 4500,
+    xl: 4200,
+  },
+  hibrido: {
+    base: 4200,
+    mid: 3900,
+    large: 3600,
+    xl: 3400,
+  },
+};
+
+/** Catálogo interno (referência técnica — NÃO exibir unitário ao cliente) */
 export const CATALOG = {
   modulo_450: { nome: 'Módulo FV N-Type Bifacial 450W', marca: 'Astronergy / Intelbras', unit: 420, w: 450 },
+  modulo_550: { nome: 'Módulo FV N-Type 550W', marca: 'Intelbras / Astronergy', unit: 480, w: 550 },
   modulo_620: { nome: 'Módulo FV EMSS-620B N-Type Bifacial', marca: 'Intelbras', unit: 580, w: 620 },
   inv_isv_2002: { nome: 'Inversor Onda Senoidal ISV 2002', marca: 'Intelbras', unit: 1890 },
   inv_ics_5002: { nome: 'Inversor Carregador SEN ICS 5002 G2', marca: 'Intelbras', unit: 4200 },
@@ -22,20 +47,6 @@ export const CATALOG = {
   bat_pb_60: { nome: 'Bateria Estacionária Pb 12V 60Ah', marca: 'Intelbras', unit: 620, kwh: 0.72 },
   bat_pb_150: { nome: 'Bateria Estacionária Pb 12V 150Ah', marca: 'Intelbras', unit: 980, kwh: 1.8 },
   bat_li_dyness: { nome: 'Bateria Lítio Dyness 51,2V 100Ah (5,12 kWh)', marca: 'Dyness', unit: 4800, kwh: 5.12 },
-  kit_fix_ceramica: { nome: 'Kit Fix Smart Cerâmica 2,40m', marca: 'Solar Group', unit: 280 },
-  kit_fix_fibro: { nome: 'Kit Fix Smart Fibrocimento 2,40m', marca: 'Solar Group', unit: 310 },
-  kit_fix_metal: { nome: 'Kit Fix Metálica Smart 2,40m', marca: 'Solar Group', unit: 340 },
-  perfil_par: { nome: 'Perfil Smart X Retrato (par) 2,40m', marca: 'Solar Group', unit: 95 },
-  grampo: { nome: 'Grampo Intermed Smart 35mm', marca: 'Solar Group', unit: 8 },
-  juncao: { nome: 'Kit Junção U Smart X 14cm', marca: 'Solar Group', unit: 18 },
-  stringbox_1e1s: { nome: 'String Box 1040V 1E-1S', marca: 'Clamper', unit: 320 },
-  stringbox_2e1s: { nome: 'String Box 600V 2E-1S', marca: 'Clamper', unit: 380 },
-  stringbox_4e4s: { nome: 'String Box 1000V 4E-4S G2', marca: 'Clamper', unit: 890 },
-  mc4: { nome: 'Conector MC4 par (M+F)', marca: 'Intelbras', unit: 28 },
-  cabo_vermelho: { nome: 'Cabo solar vermelho 1kV 4mm (25m)', marca: 'Intelbras', unit: 145 },
-  cabo_preto: { nome: 'Cabo solar preto 1kV 4mm (25m)', marca: 'Intelbras', unit: 145 },
-  cabo_verde: { nome: 'Cabo solar verde 1kV 6mm (25m)', marca: 'Intelbras', unit: 180 },
-  medidor: { nome: 'Medidor energia trifásico DTSU666', marca: 'Chint', unit: 450 },
 };
 
 const MONTH_FACTORS = [0.85, 0.88, 0.92, 0.95, 1.02, 1.05, 1.08, 1.06, 1.02, 0.98, 0.90, 0.86];
@@ -44,17 +55,28 @@ const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov
 function round2(n) { return Math.round(n * 100) / 100; }
 function money(n) { return Math.round(n); }
 
+/** Retorna R$/kWp conforme porte e modo */
+export function precoPorKwp(mode, kwp, override) {
+  const table = (override && override[mode]) || PRECO_KWP[mode] || PRECO_KWP.ongrid;
+  if (kwp <= 4) return table.base;
+  if (kwp <= 8) return table.mid;
+  if (kwp <= 15) return table.large;
+  return table.xl;
+}
+
 /**
- * Dimensiona sistema e monta BOM realista com preços de catálogo.
+ * Dimensiona sistema com precificação competitiva por kWp.
+ * Cliente vê: composição resumida + total + R$/kWp.
+ * Não expõe preço unitário de cada item.
  */
 export function dimensionar(input) {
   const mode = input.mode || 'ongrid';
   const tarifa = Number(input.tarifa) || 0.95;
-  const uf = (input.uf || 'SP').toUpperCase();
+  const uf = (input.uf || 'RJ').toUpperCase();
   const hsp = HSP[uf] || 4.8;
   const gasto = Number(input.gasto_rs) || 0;
   const whDia = Number(input.wh_dia) || 0;
-  const incluirServico = input.incluir_servico !== false;
+  const precoOverride = input.preco_kwp_table || null;
 
   let consumoKwh, kwp, batKwh = 0;
 
@@ -77,93 +99,52 @@ export function dimensionar(input) {
     }
   }
 
-  const use620 = kwp >= 15;
-  const modW = use620 ? 620 : 450;
+  const use620 = kwp >= 18;
+  const modW = use620 ? 620 : 550;
   const modulos = Math.ceil((kwp * 1000) / modW);
   const kwpReal = round2((modulos * modW) / 1000);
-  const area_m2 = round2(modulos * (use620 ? 2.6 : 2.3));
+  const area_m2 = round2(modulos * (use620 ? 2.6 : 2.4));
   const geracao_mes = Math.round(kwpReal * hsp * 30);
 
-  const itens = [];
-  const push = (key, qtd, overrideNome) => {
-    const c = CATALOG[key];
-    if (!c || qtd <= 0) return;
-    itens.push({
-      item: overrideNome || c.nome,
-      marca: c.marca,
-      qtd,
-      unit: c.unit,
-      total: money(c.unit * qtd),
-    });
-  };
+  const preco_kwp = precoPorKwp(mode, kwpReal, precoOverride);
+  const total = money(kwpReal * preco_kwp);
 
-  push(use620 ? 'modulo_620' : 'modulo_450', modulos);
+  const itens = [];
+  const modNome = use620
+    ? 'Módulo FV N-Type Bifacial 620W (Intelbras)'
+    : 'Módulo FV N-Type 550W (Intelbras / Astronergy)';
+  itens.push({ item: modNome, marca: 'Intelbras', qtd: modulos, unit: null, total: null });
 
   if (mode === 'offgrid') {
     if (kwpReal <= 0.6) {
-      push('inv_isv_2002', 1);
-      push('mppt_2024', 1);
+      itens.push({ item: 'Inversor Onda Senoidal ISV 2002 + MPPT', marca: 'Intelbras', qtd: 1, unit: null, total: null });
     } else {
       const invQtd = Math.max(1, Math.ceil(kwpReal / 5));
-      push('inv_ics_5002', invQtd);
+      itens.push({ item: 'Inversor Carregador SEN ICS 5002 G2', marca: 'Intelbras', qtd: invQtd, unit: null, total: null });
     }
     if (batKwh >= 3) {
       const nBat = Math.max(1, Math.ceil(batKwh / 5.12));
-      push('bat_li_dyness', nBat);
+      itens.push({ item: 'Bateria Lítio Dyness 5,12 kWh', marca: 'Dyness', qtd: nBat, unit: null, total: null });
       batKwh = round2(nBat * 5.12);
-    } else if (batKwh >= 1.5) {
-      const nBat = Math.max(2, Math.ceil(batKwh / 1.8));
-      push('bat_pb_150', nBat);
-      batKwh = round2(nBat * 1.8);
     } else {
-      const nBat = Math.max(2, Math.ceil(batKwh / 0.72));
-      push('bat_pb_60', nBat);
-      batKwh = round2(nBat * 0.72);
+      const nBat = Math.max(2, Math.ceil(batKwh / 1.8));
+      itens.push({ item: 'Bateria Estacionária Pb 150Ah', marca: 'Intelbras', qtd: nBat, unit: null, total: null });
+      batKwh = round2(nBat * 1.8);
     }
   } else if (mode === 'hibrido') {
     const invQtd = Math.max(1, Math.ceil(kwpReal / 6));
-    push('inv_hibrido_6k', invQtd);
+    itens.push({ item: 'Inversor Híbrido IONS 6K M', marca: 'Intelbras', qtd: invQtd, unit: null, total: null });
     const nBat = Math.max(1, Math.ceil(batKwh / 5.12));
-    push('bat_li_dyness', nBat);
+    itens.push({ item: 'Bateria Lítio Dyness 5,12 kWh', marca: 'Dyness', qtd: nBat, unit: null, total: null });
     batKwh = round2(nBat * 5.12);
   } else {
     const invQtd = Math.max(1, Math.ceil(kwpReal / 5));
-    push('inv_ongrid_5k', invQtd);
+    itens.push({ item: 'Inversor On-Grid String 5kW', marca: 'Intelbras', qtd: invQtd, unit: null, total: null });
   }
 
-  const kitsFix = Math.max(1, Math.ceil(modulos / 4));
-  push(mode === 'hibrido' && kwpReal > 20 ? 'kit_fix_metal' : 'kit_fix_ceramica', kitsFix);
-  push('perfil_par', Math.max(1, Math.ceil(modulos / 2)));
-  if (modulos > 4) {
-    push('grampo', Math.max(2, modulos - kitsFix * 2));
-    push('juncao', Math.max(2, Math.ceil(modulos / 3)));
-  }
+  itens.push({ item: 'Estrutura de fixação + cabos + string box + conectores', marca: 'Paraty Solar', qtd: 1, unit: null, total: null });
+  itens.push({ item: 'Projeto elétrico, instalação, comissionamento e homologação', marca: 'Paraty Solar', qtd: 1, unit: null, total: null });
 
-  if (modulos <= 4) push('stringbox_1e1s', 1);
-  else if (modulos <= 12) push('stringbox_2e1s', Math.ceil(modulos / 8));
-  else push('stringbox_4e4s', Math.ceil(modulos / 20));
-
-  push('mc4', Math.max(1, Math.ceil(modulos / 4)));
-  const caboSets = Math.max(1, Math.ceil(modulos / 8));
-  push('cabo_vermelho', caboSets);
-  push('cabo_preto', caboSets);
-  if (modulos >= 6) push('cabo_verde', caboSets);
-  if (mode === 'hibrido' && kwpReal > 10) push('medidor', 1);
-
-  const subtotalEquip = itens.reduce((s, i) => s + i.total, 0);
-  const servicoUnit = mode === 'offgrid' ? 1400 : mode === 'hibrido' ? 1200 : 900;
-  const servico = incluirServico ? money(Math.max(1500, kwpReal * servicoUnit)) : 0;
-  if (servico > 0) {
-    itens.push({
-      item: 'Serviço de instalação e comissionamento',
-      marca: 'Paraty Solar',
-      qtd: 1,
-      unit: servico,
-      total: servico,
-    });
-  }
-
-  const total = money(subtotalEquip + servico);
   const economiaMes = mode === 'offgrid'
     ? consumoKwh * tarifa
     : Math.min(gasto * 0.92, geracao_mes * tarifa * 0.95);
@@ -205,6 +186,8 @@ export function dimensionar(input) {
     kwp: kwpReal,
     modulos,
     modulo_w: modW,
+    preco_kwp,
+    preco_kwp_label: `R$ ${preco_kwp.toLocaleString('pt-BR')}/kWp`,
     inversor: itens.find((i) => /inversor/i.test(i.item))?.item || '',
     baterias: batKwh > 0 ? { kwh: batKwh, tipo: batKwh >= 3 ? 'LiFePO4 Dyness' : 'Pb-Ácido Intelbras' } : null,
     area_m2,
@@ -213,8 +196,8 @@ export function dimensionar(input) {
     economia_ano,
     economia_mes: money(economiaMes),
     investimento: total,
-    subtotal_equip: subtotalEquip,
-    servico,
+    subtotal_equip: null,
+    servico: null,
     payback_anos,
     consumo_kwh: round2(consumoKwh),
     gasto_rs: gasto || money(consumoKwh * tarifa),
@@ -238,6 +221,7 @@ export function dimensionar(input) {
       lei: 'Dimensionamento alinhado à Lei 14.300/22 e REN ANEEL.',
       garantia_modulos: '15 anos produto / 30 anos performance (Grupo Intelbras).',
       garantia_inversor: '5–10 anos conforme modelo.',
+      preco: 'Investimento turnkey competitivo (equipamentos + instalação + homologação). Preço por kWp alinhado ao mercado 2026.',
     },
   };
 }
