@@ -51,7 +51,6 @@
     setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
   }
 
-  /* Step 1 */
   window.selectTipo = function (el) {
     document.querySelectorAll('.ib-type').forEach((t) => t.classList.remove('selected'));
     el.classList.add('selected');
@@ -308,8 +307,13 @@
       kwp = Math.max(1.2, Math.round(kwp * 10) / 10);
     }
     const area = Math.round(kwp * 6.5 * 10) / 10;
-    const custoKwp = state.tipo === 'offgrid' ? 9200 : 5200;
-    const custo = Math.round(kwp * custoKwp + batKwh * 1800);
+    let custoKwp;
+    if (state.tipo === 'offgrid') {
+      custoKwp = kwp <= 4 ? 5200 : kwp <= 8 ? 4800 : kwp <= 15 ? 4500 : 4200;
+    } else {
+      custoKwp = kwp <= 4 ? 3100 : kwp <= 8 ? 2900 : kwp <= 15 ? 2700 : 2550;
+    }
+    const custo = Math.round(kwp * custoKwp);
     const geracaoMes = Math.round(kwp * hsp * 30);
     const economiaMes = state.tipo === 'offgrid'
       ? consumoKwh * tarifa
