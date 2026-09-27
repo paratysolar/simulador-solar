@@ -1,23 +1,23 @@
 export const PHOTOS = {
-  logo: null, // texto CSS
+  logo: null, // texto CSS — fotos reais Paraty Solar (HEIC convertidos + JPG)
   cover1: '/prop-photos/cover1.jpg',
   cover2: '/prop-photos/cover2.jpg',
   cover3: '/prop-photos/cover3.jpg',
   portfolio: [
-    { src: '/prop-photos/20240505_155359.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
-    { src: '/prop-photos/20240505_155404.jpg', seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
-    { src: '/prop-photos/20240505_155408.jpg', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
-    { src: '/prop-photos/20240615_102913.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
-    { src: '/prop-photos/20240827_142325.jpg', seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
-    { src: '/prop-photos/20250211_161337.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
-    { src: '/prop-photos/20250211_161402.jpg', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
-    { src: '/prop-photos/20250211_161418.jpg', seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
-    { src: '/prop-photos/20240827_142114.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
+    { src: '/prop-photos/p1.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
+    { src: '/prop-photos/p2.jpg', seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
+    { src: '/prop-photos/p3.jpg', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
+    { src: '/prop-photos/p4.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
+    { src: '/prop-photos/p5.jpg', seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
+    { src: '/prop-photos/p6.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
+    { src: '/prop-photos/p7.jpg', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
+    { src: '/prop-photos/p8.jpg', seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
+    { src: '/prop-photos/p9.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
   ],
   team: [
-    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.54.jpg',
-    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.48.jpg',
-    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.54_1.jpg',
+    '/prop-photos/team1.jpg',
+    '/prop-photos/team2.jpg',
+    '/prop-photos/team3.jpg',
   ],
 };
 export function fmt(n) {
