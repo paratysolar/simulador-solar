@@ -1,5 +1,5 @@
 export const PHOTOS = {
-  logo: null,
+  logo: null, // texto CSS
   cover1: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=400&fit=crop',
   cover2: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=400&fit=crop',
   cover3: 'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=400&h=400&fit=crop',
@@ -20,14 +20,12 @@ export const PHOTOS = {
     'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop',
   ],
 };
-
 export function fmt(n) {
   return 'R$ ' + Math.round(n || 0).toLocaleString('pt-BR');
 }
 export function fmtDec(n) {
   return 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
 export function ChartGeracao({ meses, geracao, consumo }) {
   if (!geracao?.length) return null;
   const max = Math.max(...geracao, ...(consumo || []), 1);
@@ -52,7 +50,6 @@ export function ChartGeracao({ meses, geracao, consumo }) {
     </div>
   );
 }
-
 export function ChartRetorno({ total, economia_ano }) {
   const bars = [];
   let acum = -(total || 0);
@@ -74,7 +71,10 @@ export function ChartRetorno({ total, economia_ano }) {
           <div key={b.y} className="bar-col">
             <div
               className="bar"
-              style={{ height: `${(Math.abs(b.v) / maxAbs) * 180}px`, background: b.v >= 0 ? '#7dd3fc' : '#fda4af' }}
+              style={{
+                height: `${(Math.abs(b.v) / maxAbs) * 180}px`,
+                background: b.v >= 0 ? '#7dd3fc' : '#fda4af',
+              }}
               title={`Ano ${b.y}: ${fmt(b.v)}`}
             />
             <span className="bar-lbl">{b.y}</span>
@@ -84,7 +84,6 @@ export function ChartRetorno({ total, economia_ano }) {
     </div>
   );
 }
-
 export function TopBar() {
   return (
     <div className="page-topbar">
@@ -92,7 +91,6 @@ export function TopBar() {
     </div>
   );
 }
-
 export const DEFAULT_EQUIP = {
   ongrid: { base: 1780, mid: 1580, large: 1380, xl: 1230 },
   hibrido: { base: 2880, mid: 2580, large: 2280, xl: 2080 },
