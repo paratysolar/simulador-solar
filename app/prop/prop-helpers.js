@@ -1,23 +1,23 @@
 export const PHOTOS = {
   logo: null, // texto CSS
-  cover1: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=400&fit=crop',
-  cover2: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=400&fit=crop',
-  cover3: 'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=400&h=400&fit=crop',
+  cover1: '/prop-photos/cover1.jpg',
+  cover2: '/prop-photos/cover2.jpg',
+  cover3: '/prop-photos/cover3.jpg',
   portfolio: [
-    { src: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
-    { src: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=600&h=400&fit=crop', seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
-    { src: 'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
-    { src: 'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
-    { src: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=600&h=400&fit=crop', seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
-    { src: 'https://images.unsplash.com/photo-1566093097221-ac02c3d8c5a4?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
-    { src: 'https://images.unsplash.com/photo-1592833159155-c62df1b65634?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
-    { src: 'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=600&h=400&fit=crop', seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
-    { src: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
+    { src: '/prop-photos/20240505_155359.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
+    { src: '/prop-photos/20240505_155404.jpg', seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
+    { src: '/prop-photos/20240505_155408.jpg', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
+    { src: '/prop-photos/20240615_102913.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
+    { src: '/prop-photos/20240827_142325.jpg', seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
+    { src: '/prop-photos/20250211_161337.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
+    { src: '/prop-photos/20250211_161402.jpg', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
+    { src: '/prop-photos/20250211_161418.jpg', seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
+    { src: '/prop-photos/20240827_142114.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
   ],
   team: [
-    'https://images.unsplash.com/photo-1621905252507-b35492ae9793?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop',
+    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.54.jpg',
+    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.48.jpg',
+    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.54_1.jpg',
   ],
 };
 export function fmt(n) {
@@ -92,7 +92,7 @@ export function TopBar() {
   );
 }
 export const DEFAULT_EQUIP = {
-  ongrid: { base: 1780, mid: 1580, large: 1380, xl: 1230 },
+  ongrid: { base: 1780, mid: 1580, large: 1430, xl: 1600 },
   hibrido: { base: 2880, mid: 2580, large: 2280, xl: 2080 },
   offgrid: { base: 5200, mid: 4800, large: 4500, xl: 4200 },
 };
