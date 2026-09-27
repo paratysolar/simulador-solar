@@ -1,8 +1,8 @@
 /**
- * Precificação competitiva por kWp — alinhada ao mercado 2026 (Leroy / Solfácil / Solar Task).
- * Cliente vê investimento total e R$/kWp, NÃO lista unitária detalhada.
- * Referência mercado: R$ 2.450–3.500/kWp instalado (Solfácil R$ 2,45/Wp).
- * Paraty Solar: agressivo e competitivo na Costa Verde/RJ.
+ * Precificação Paraty Solar
+ * - Equipamentos por faixa de kWp (tabela no banco)
+ * - Mão de obra kits homologados: R$ 1.320 / kWp (fixo)
+ * Cliente vê total turnkey + R$/kWp, sem unitário detalhado.
  */
 
 export const HSP = {
@@ -12,13 +12,22 @@ export const HSP = {
   SP: 4.7, SE: 5.3, TO: 5.2,
 };
 
-/** Tabela de preço por kWp instalado (tudo incluso: equipamentos + instalação + homologação) */
-export const PRECO_KWP = {
+/** Mão de obra instalação + homologação (kits homologados on-grid / híbrido) */
+export const MAO_OBRA_KWP = 1320;
+
+/** Preço de equipamentos por kWp (sem mão de obra) — defaults; sobrescritos pelo banco */
+export const EQUIP_KWP = {
   ongrid: {
-    base: 3100,
-    mid: 2900,
-    large: 2700,
-    xl: 2550,
+    base: 1780,
+    mid: 1580,
+    large: 1380,
+    xl: 1230,
+  },
+  hibrido: {
+    base: 2880,
+    mid: 2580,
+    large: 2280,
+    xl: 2080,
   },
   offgrid: {
     base: 5200,
@@ -26,15 +35,24 @@ export const PRECO_KWP = {
     large: 4500,
     xl: 4200,
   },
-  hibrido: {
-    base: 4200,
-    mid: 3900,
-    large: 3600,
-    xl: 3400,
-  },
 };
 
-/** Catálogo interno (referência técnica — NÃO exibir unitário ao cliente) */
+export const PRECO_KWP = {
+  ongrid: {
+    base: EQUIP_KWP.ongrid.base + MAO_OBRA_KWP,
+    mid: EQUIP_KWP.ongrid.mid + MAO_OBRA_KWP,
+    large: EQUIP_KWP.ongrid.large + MAO_OBRA_KWP,
+    xl: EQUIP_KWP.ongrid.xl + MAO_OBRA_KWP,
+  },
+  hibrido: {
+    base: EQUIP_KWP.hibrido.base + MAO_OBRA_KWP,
+    mid: EQUIP_KWP.hibrido.mid + MAO_OBRA_KWP,
+    large: EQUIP_KWP.hibrido.large + MAO_OBRA_KWP,
+    xl: EQUIP_KWP.hibrido.xl + MAO_OBRA_KWP,
+  },
+  offgrid: { ...EQUIP_KWP.offgrid },
+};
+
 export const CATALOG = {
   modulo_450: { nome: 'Módulo FV N-Type Bifacial 450W', marca: 'Astronergy / Intelbras', unit: 420, w: 450 },
   modulo_550: { nome: 'Módulo FV N-Type 550W', marca: 'Intelbras / Astronergy', unit: 480, w: 550 },
@@ -55,20 +73,45 @@ const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov
 function round2(n) { return Math.round(n * 100) / 100; }
 function money(n) { return Math.round(n); }
 
-/** Retorna R$/kWp conforme porte e modo */
-export function precoPorKwp(mode, kwp, override) {
-  const table = (override && override[mode]) || PRECO_KWP[mode] || PRECO_KWP.ongrid;
-  if (kwp <= 4) return table.base;
-  if (kwp <= 8) return table.mid;
-  if (kwp <= 15) return table.large;
-  return table.xl;
+function faixaKey(kwp) {
+  if (kwp <= 4) return 'base';
+  if (kwp <= 8) return 'mid';
+  if (kwp <= 15) return 'large';
+  return 'xl';
 }
 
-/**
- * Dimensiona sistema com precificação competitiva por kWp.
- * Cliente vê: composição resumida + total + R$/kWp.
- * Não expõe preço unitário de cada item.
- */
+export function calcularPrecoKwp(mode, kwp, cfg) {
+  const m = mode || 'ongrid';
+  const fk = faixaKey(kwp);
+  const equipTable = (cfg?.equip && cfg.equip[m]) || EQUIP_KWP[m] || EQUIP_KWP.ongrid;
+  const equip = Number(equipTable[fk]) || EQUIP_KWP.ongrid.base;
+  const isHomologado = m === 'ongrid' || m === 'hibrido';
+  const maoObraUnit = isHomologado
+    ? (Number(cfg?.mao_obra_kwp) || MAO_OBRA_KWP)
+    : 0;
+  const mao_obra = isHomologado ? money(kwp * maoObraUnit) : 0;
+  const equip_total = money(kwp * equip);
+  const total = equip_total + mao_obra;
+  const preco_kwp = kwp > 0 ? money(total / kwp) : equip + maoObraUnit;
+  return {
+    equip_kwp: equip,
+    mao_obra_kwp: maoObraUnit,
+    equip_total,
+    mao_obra,
+    total,
+    preco_kwp,
+    homologado: isHomologado,
+    faixa: fk,
+  };
+}
+
+export function precoPorKwp(mode, kwp, override) {
+  const cfg = override
+    ? { equip: override, mao_obra_kwp: MAO_OBRA_KWP }
+    : null;
+  return calcularPrecoKwp(mode, kwp, cfg).preco_kwp;
+}
+
 export function dimensionar(input) {
   const mode = input.mode || 'ongrid';
   const tarifa = Number(input.tarifa) || 0.95;
@@ -76,7 +119,7 @@ export function dimensionar(input) {
   const hsp = HSP[uf] || 4.8;
   const gasto = Number(input.gasto_rs) || 0;
   const whDia = Number(input.wh_dia) || 0;
-  const precoOverride = input.preco_kwp_table || null;
+  const priceCfg = input.price_cfg || null;
 
   let consumoKwh, kwp, batKwh = 0;
 
@@ -106,8 +149,9 @@ export function dimensionar(input) {
   const area_m2 = round2(modulos * (use620 ? 2.6 : 2.4));
   const geracao_mes = Math.round(kwpReal * hsp * 30);
 
-  const preco_kwp = precoPorKwp(mode, kwpReal, precoOverride);
-  const total = money(kwpReal * preco_kwp);
+  const preco = calcularPrecoKwp(mode, kwpReal, priceCfg);
+  const total = preco.total;
+  const preco_kwp = preco.preco_kwp;
 
   const itens = [];
   const modNome = use620
@@ -143,7 +187,17 @@ export function dimensionar(input) {
   }
 
   itens.push({ item: 'Estrutura de fixação + cabos + string box + conectores', marca: 'Paraty Solar', qtd: 1, unit: null, total: null });
-  itens.push({ item: 'Projeto elétrico, instalação, comissionamento e homologação', marca: 'Paraty Solar', qtd: 1, unit: null, total: null });
+  if (preco.homologado) {
+    itens.push({
+      item: `Mão de obra instalação e homologação (R$ ${preco.mao_obra_kwp.toLocaleString('pt-BR')}/kWp)`,
+      marca: 'Paraty Solar',
+      qtd: 1,
+      unit: null,
+      total: null,
+    });
+  } else {
+    itens.push({ item: 'Projeto elétrico, instalação e comissionamento', marca: 'Paraty Solar', qtd: 1, unit: null, total: null });
+  }
 
   const economiaMes = mode === 'offgrid'
     ? consumoKwh * tarifa
@@ -188,6 +242,12 @@ export function dimensionar(input) {
     modulo_w: modW,
     preco_kwp,
     preco_kwp_label: `R$ ${preco_kwp.toLocaleString('pt-BR')}/kWp`,
+    equip_kwp: preco.equip_kwp,
+    mao_obra_kwp: preco.mao_obra_kwp,
+    equip_total: preco.equip_total,
+    mao_obra: preco.mao_obra,
+    homologado: preco.homologado,
+    faixa: preco.faixa,
     inversor: itens.find((i) => /inversor/i.test(i.item))?.item || '',
     baterias: batKwh > 0 ? { kwh: batKwh, tipo: batKwh >= 3 ? 'LiFePO4 Dyness' : 'Pb-Ácido Intelbras' } : null,
     area_m2,
@@ -196,8 +256,8 @@ export function dimensionar(input) {
     economia_ano,
     economia_mes: money(economiaMes),
     investimento: total,
-    subtotal_equip: null,
-    servico: null,
+    subtotal_equip: preco.equip_total,
+    servico: preco.mao_obra,
     payback_anos,
     consumo_kwh: round2(consumoKwh),
     gasto_rs: gasto || money(consumoKwh * tarifa),
@@ -219,9 +279,19 @@ export function dimensionar(input) {
     grid_zero: mode === 'ongrid' && kwpReal <= 7.5,
     notes: {
       lei: 'Dimensionamento alinhado à Lei 14.300/22 e REN ANEEL.',
-      garantia_modulos: '15 anos produto / 30 anos performance (Grupo Intelbras).',
-      garantia_inversor: '5–10 anos conforme modelo.',
-      preco: 'Investimento turnkey competitivo (equipamentos + instalação + homologação). Preço por kWp alinhado ao mercado 2026.',
+      garantia_modulos: '15 anos de fabricação das placas / 25 anos de performance.',
+      garantia_inversor: '10 anos de garantia dos inversores + suporte gratuito Intelbras vitalício.',
+      preco: preco.homologado
+        ? `Equipamentos + mão de obra R$ ${preco.mao_obra_kwp}/kWp (instalação e homologação).`
+        : 'Pacote off-grid turnkey (equipamentos + instalação).',
     },
+  };
+}
+
+export function defaultPriceConfig() {
+  return {
+    mao_obra_kwp: MAO_OBRA_KWP,
+    equip: JSON.parse(JSON.stringify(EQUIP_KWP)),
+    updated_at: new Date().toISOString(),
   };
 }
