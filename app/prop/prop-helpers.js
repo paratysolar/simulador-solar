@@ -1,24 +1,25 @@
+import { REAL_PHOTOS } from './photo-data';
+
+const META = [
+  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
+  { seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
+  { seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
+  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
+  { seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
+  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
+  { seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
+  { seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
+  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
+];
+
+/** Fotos reais Paraty Solar (HEIC convertidos → base64) */
 export const PHOTOS = {
-  logo: null, // texto CSS — fotos reais Paraty Solar (HEIC convertidos + JPG)
-  cover1: '/prop-photos/cover1.jpg',
-  cover2: '/prop-photos/cover2.jpg',
-  cover3: '/prop-photos/cover3.jpg',
-  portfolio: [
-    { src: '/prop-photos/p1.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
-    { src: '/prop-photos/p2.jpg', seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
-    { src: '/prop-photos/p3.jpg', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
-    { src: '/prop-photos/p4.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
-    { src: '/prop-photos/p5.jpg', seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
-    { src: '/prop-photos/p6.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
-    { src: '/prop-photos/p7.jpg', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
-    { src: '/prop-photos/p8.jpg', seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
-    { src: '/prop-photos/p9.jpg', seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
-  ],
-  team: [
-    '/prop-photos/team1.jpg',
-    '/prop-photos/team2.jpg',
-    '/prop-photos/team3.jpg',
-  ],
+  logo: null,
+  cover1: REAL_PHOTOS.cover1,
+  cover2: REAL_PHOTOS.cover2,
+  cover3: REAL_PHOTOS.cover3,
+  portfolio: REAL_PHOTOS.portfolio.map((src, i) => ({ src, ...META[i] })),
+  team: REAL_PHOTOS.team,
 };
 export function fmt(n) {
   return 'R$ ' + Math.round(n || 0).toLocaleString('pt-BR');
