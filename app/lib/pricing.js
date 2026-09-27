@@ -15,20 +15,25 @@ export const HSP = {
 /** Mão de obra instalação + homologação (kits homologados on-grid / híbrido) */
 export const MAO_OBRA_KWP = 1320;
 
-/** Preço de equipamentos por kWp (sem mão de obra) — defaults; sobrescritos pelo banco */
+/**
+ * Preço de equipamentos por kWp (sem mão de obra) — defaults; sobrescritos pelo banco.
+ * Turnkey alvo alinhado à faixa Intelbras (~R$ 2.800–3.640/kWp em sistemas grandes):
+ * on-grid: 3100 / 2900 / 2750 / 2920 (xl ≥15 kWp)
+ */
 export const EQUIP_KWP = {
   ongrid: {
-    base: 1780,
-    mid: 1580,
-    large: 1380,
-    xl: 1230,
+    base: 1780,  // ≤4 kWp  → turnkey 3100
+    mid: 1580,   // 4–8     → 2900
+    large: 1430, // 8–15    → 2750
+    xl: 1600,    // >15     → 2920 (faixa Intelbras ~80 kWp)
   },
   hibrido: {
-    base: 2880,
-    mid: 2580,
-    large: 2280,
-    xl: 2080,
+    base: 2880,  // 4200
+    mid: 2580,   // 3900
+    large: 2280, // 3600
+    xl: 2080,    // 3400
   },
+  // Off-grid: mão de obra embutida no pacote
   offgrid: {
     base: 5200,
     mid: 4800,
@@ -37,6 +42,7 @@ export const EQUIP_KWP = {
   },
 };
 
+/** Compat: total turnkey legado */
 export const PRECO_KWP = {
   ongrid: {
     base: EQUIP_KWP.ongrid.base + MAO_OBRA_KWP,
@@ -80,11 +86,17 @@ function faixaKey(kwp) {
   return 'xl';
 }
 
+/**
+ * Calcula preço de equipamentos e mão de obra.
+ * @param {object} [cfg] — override do banco { mao_obra_kwp, equip: { ongrid, hibrido, offgrid } }
+ */
 export function calcularPrecoKwp(mode, kwp, cfg) {
   const m = mode || 'ongrid';
   const fk = faixaKey(kwp);
   const equipTable = (cfg?.equip && cfg.equip[m]) || EQUIP_KWP[m] || EQUIP_KWP.ongrid;
   const equip = Number(equipTable[fk]) || EQUIP_KWP.ongrid.base;
+
+  // Kits homologados (on-grid e híbrido): mão de obra R$ 1320/kWp
   const isHomologado = m === 'ongrid' || m === 'hibrido';
   const maoObraUnit = isHomologado
     ? (Number(cfg?.mao_obra_kwp) || MAO_OBRA_KWP)
@@ -93,18 +105,30 @@ export function calcularPrecoKwp(mode, kwp, cfg) {
   const equip_total = money(kwp * equip);
   const total = equip_total + mao_obra;
   const preco_kwp = kwp > 0 ? money(total / kwp) : equip + maoObraUnit;
+
+  // Faixa estimada (estilo Intelbras ~80 kWp: R$ 223k–291k ≈ −10% a +25%)
+  const total_min = money(total * 0.90);
+  const total_max = money(total * 1.25);
+  const preco_kwp_min = kwp > 0 ? money(total_min / kwp) : money(preco_kwp * 0.90);
+  const preco_kwp_max = kwp > 0 ? money(total_max / kwp) : money(preco_kwp * 1.25);
+
   return {
     equip_kwp: equip,
     mao_obra_kwp: maoObraUnit,
     equip_total,
     mao_obra,
     total,
+    total_min,
+    total_max,
     preco_kwp,
+    preco_kwp_min,
+    preco_kwp_max,
     homologado: isHomologado,
     faixa: fk,
   };
 }
 
+/** @deprecated use calcularPrecoKwp */
 export function precoPorKwp(mode, kwp, override) {
   const cfg = override
     ? { equip: override, mao_obra_kwp: MAO_OBRA_KWP }
@@ -119,6 +143,7 @@ export function dimensionar(input) {
   const hsp = HSP[uf] || 4.8;
   const gasto = Number(input.gasto_rs) || 0;
   const whDia = Number(input.wh_dia) || 0;
+  // cfg do banco: { mao_obra_kwp, equip: { ongrid, hibrido, offgrid } }
   const priceCfg = input.price_cfg || null;
 
   let consumoKwh, kwp, batKwh = 0;
@@ -151,6 +176,8 @@ export function dimensionar(input) {
 
   const preco = calcularPrecoKwp(mode, kwpReal, priceCfg);
   const total = preco.total;
+  const total_min = preco.total_min;
+  const total_max = preco.total_max;
   const preco_kwp = preco.preco_kwp;
 
   const itens = [];
@@ -204,6 +231,11 @@ export function dimensionar(input) {
     : Math.min(gasto * 0.92, geracao_mes * tarifa * 0.95);
   const economia_ano = money(economiaMes * 12);
   const payback_anos = economia_ano > 0 ? round2(total / economia_ano) : 0;
+  // Payback em faixa conservadora (estilo Intelbras: "Entre 4 e 5 anos")
+  // Usa fator 1,6–2,2× o payback simples para refletir tarifas, degradação e análise de crédito
+  const pbSimples = economia_ano > 0 ? total / economia_ano : 0;
+  const payback_min = pbSimples > 0 ? Math.max(2, Math.floor(pbSimples * 1.6)) : 0;
+  const payback_max = pbSimples > 0 ? Math.max(payback_min + 1, Math.ceil(pbSimples * 2.2)) : 0;
 
   const geracaoMensal = MONTH_FACTORS.map((f) => Math.round(geracao_mes * f));
   const consumoMensal = MONTHS.map(() => Math.round(consumoKwh));
@@ -241,7 +273,9 @@ export function dimensionar(input) {
     modulos,
     modulo_w: modW,
     preco_kwp,
-    preco_kwp_label: `R$ ${preco_kwp.toLocaleString('pt-BR')}/kWp`,
+    preco_kwp_min: preco.preco_kwp_min,
+    preco_kwp_max: preco.preco_kwp_max,
+    preco_kwp_label: `Entre R$ ${preco.preco_kwp_min.toLocaleString('pt-BR')} e R$ ${preco.preco_kwp_max.toLocaleString('pt-BR')}/kWp`,
     equip_kwp: preco.equip_kwp,
     mao_obra_kwp: preco.mao_obra_kwp,
     equip_total: preco.equip_total,
@@ -256,9 +290,16 @@ export function dimensionar(input) {
     economia_ano,
     economia_mes: money(economiaMes),
     investimento: total,
+    investimento_min: total_min,
+    investimento_max: total_max,
     subtotal_equip: preco.equip_total,
     servico: preco.mao_obra,
     payback_anos,
+    payback_min,
+    payback_max,
+    payback_label: payback_min && payback_max
+      ? `Entre ${payback_min} e ${payback_max} anos`
+      : '—',
     consumo_kwh: round2(consumoKwh),
     gasto_rs: gasto || money(consumoKwh * tarifa),
     tarifa,
@@ -266,6 +307,8 @@ export function dimensionar(input) {
     uf,
     itens,
     total,
+    total_min,
+    total_max,
     geracaoMensal,
     consumoMensal,
     meses: MONTHS,
@@ -288,6 +331,7 @@ export function dimensionar(input) {
   };
 }
 
+/** Defaults para seed no banco */
 export function defaultPriceConfig() {
   return {
     mao_obra_kwp: MAO_OBRA_KWP,
