@@ -127,9 +127,11 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                   <div className="way">
                     <div className="way-icon">💵</div>
                     <h4>À VISTA</h4>
-                    <div className="way-price">{fmtDec(r.total)}</div>
+                    <div className="way-price" style={{ fontSize: '1.05rem', lineHeight: 1.35 }}>
+                      Entre {fmtDec(r.total_min || Math.round((r.total || 0) * 0.9))} e {fmtDec(r.total_max || Math.round((r.total || 0) * 1.25))}
+                    </div>
                     <p className="way-note">
-                      Aqui você tem a grande vantagem de não pagar <strong>NENHUM JUROS</strong> sobre o investimento e ainda tem um ótimo tempo de retorno sobre o valor investido.
+                      Valor aproximado do sistema com instalação*. Aqui você não paga <strong>NENHUM JUROS</strong> e tem ótimo retorno sobre o investimento.
                     </p>
                   </div>
                 </div>
@@ -187,7 +189,12 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                     <tr><td>60x</td><td>{fmtDec(parcela60)}</td></tr>
                     <tr><td>48x</td><td>{fmtDec(parcela48)}</td></tr>
                     <tr><td>10x (cartão)</td><td>{fmtDec(parcela10)}</td></tr>
-                    <tr className="inv-row"><td>Investimento</td><td>{fmtDec(r.total)}</td></tr>
+                    <tr className="inv-row">
+                      <td>Investimento aproximado*</td>
+                      <td>
+                        Entre {fmtDec(r.total_min || Math.round((r.total || 0) * 0.9))} e {fmtDec(r.total_max || Math.round((r.total || 0) * 1.25))}
+                      </td>
+                    </tr>
                     <tr>
                       <td>Prazo de entrega</td>
                       <td>Créditos sendo gerados em 90 (noventa) dias corridos, a contar do dia de fechamento do pedido.</td>
@@ -208,7 +215,7 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                   </tbody>
                 </table>
                 <p className="fine-print">
-                  Importante! O valor da parcela é baseado em uma taxa média, porém o Programa de Financiamentos passa por análise de critério interno e de forma independente e estão sujeitos à análise e aprovação de crédito e cadastro.
+                  Importante! O valor da parcela é baseado em uma taxa média, porém o Programa de Financiamentos passa por análise de critério interno e de forma independente e estão sujeitos à análise e aprovação de crédito e cadastro. Valores aproximados sujeitos a variáveis de telhado, estrutura e condições climáticas.
                 </p>
                 <div className="page-num">4</div>
               </div>
@@ -220,7 +227,7 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                 <h3 className="title-blue" style={{ marginTop: 0, fontStyle: 'italic' }}>Retorno de Investimento</h3>
                 <p className="body">
                   Neste caso, considerando a economia gerada pelo KIT solar, e aumento da fatura de energia elétrica em 10,00% a.a.,
-                  o <strong>RETORNO DO INVESTIMENTO</strong> (payback simples) se dá em <strong>{paybackTxt}</strong>,
+                  o <strong>RETORNO DO INVESTIMENTO</strong> (payback aproximado) se dá em <strong>{paybackTxt}</strong>,
                   e após isso o valor da fatura que seria pago para a concessionária é lucro para o investidor,
                   portanto em uma análise de 15 anos, teria um retorno de <strong>{fmt(Math.max(0, lucro15))}</strong>,
                   sendo a vida útil mínima das placas fotovoltaicas igual a 25 anos.
