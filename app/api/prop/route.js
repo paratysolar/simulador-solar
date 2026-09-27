@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
-import { hasDatabase, insertProposal, listProposals, getProposal, ensureSchema } from '../../lib/db';
+import {
+  hasDatabase,
+  insertProposal,
+  listProposals,
+  getProposal,
+  ensureSchema,
+  getPriceConfig,
+} from '../../lib/db';
 import { dimensionar } from '../../lib/pricing';
 
 export const runtime = 'edge';
@@ -11,10 +18,22 @@ function checkPropAuth(request) {
 }
 
 export async function POST(request) {
-  if (!checkPropAuth(request)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-  if (!hasDatabase()) return NextResponse.json({ error: 'DATABASE_URL não configurada' }, { status: 503 });
+  if (!checkPropAuth(request)) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+  }
+  if (!hasDatabase()) {
+    return NextResponse.json({ error: 'DATABASE_URL não configurada' }, { status: 503 });
+  }
   try {
     const body = await request.json();
+    // Carrega tabela de preço do banco (mão de obra R$ 1320/kWp + equipamentos por faixa)
+    let price_cfg = null;
+    try {
+      price_cfg = await getPriceConfig();
+    } catch (_) {
+      price_cfg = null;
+    }
+
     const calc = dimensionar({
       mode: body.mode || 'ongrid',
       tarifa: body.tarifa,
@@ -22,7 +41,9 @@ export async function POST(request) {
       gasto_rs: body.gasto_rs,
       wh_dia: body.wh_dia,
       incluir_servico: body.incluir_servico !== false,
+      price_cfg,
     });
+
     const id = await insertProposal({
       ...calc,
       lead_id: body.lead_id || null,
@@ -36,6 +57,7 @@ export async function POST(request) {
       status: 'gerada',
       created_by: 'prop',
     });
+
     return NextResponse.json({
       ok: true,
       id,
@@ -49,6 +71,9 @@ export async function POST(request) {
         uf: body.uf || calc.uf,
         ...calc,
       },
+      price_cfg: price_cfg
+        ? { mao_obra_kwp: price_cfg.mao_obra_kwp, faixa: calc.faixa }
+        : null,
     });
   } catch (err) {
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
@@ -56,8 +81,12 @@ export async function POST(request) {
 }
 
 export async function GET(request) {
-  if (!checkPropAuth(request)) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-  if (!hasDatabase()) return NextResponse.json({ error: 'DATABASE_URL não configurada' }, { status: 503 });
+  if (!checkPropAuth(request)) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+  }
+  if (!hasDatabase()) {
+    return NextResponse.json({ error: 'DATABASE_URL não configurada' }, { status: 503 });
+  }
   try {
     await ensureSchema();
     const { searchParams } = new URL(request.url);

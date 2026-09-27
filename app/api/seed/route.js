@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
-import { hasDatabase, ensureSchema, insertLead, listLeads } from '../../lib/db';
+import {
+  hasDatabase,
+  ensureSchema,
+  insertLead,
+  listLeads,
+  seedPriceTables,
+  getPriceConfig,
+  listPriceTiers,
+} from '../../lib/db';
+import { MAO_OBRA_KWP } from '../../lib/pricing';
 
 export const runtime = 'edge';
 
-/** POST: cria lead de teste no Neon. Protegido por CRM_PASSWORD ou PROP_PASSWORD. */
+/** POST: seed lead de teste + tabelas de preço (mão de obra R$ 1320/kWp). */
 export async function POST(request) {
   try {
     const auth = request.headers.get('x-crm-auth') || request.headers.get('x-prop-auth') || '';
@@ -23,6 +32,8 @@ export async function POST(request) {
     }
 
     await ensureSchema();
+    await seedPriceTables();
+
     const id = await insertLead({
       mode: 'offgrid',
       tipoLocal: 'offgrid',
@@ -57,11 +68,20 @@ export async function POST(request) {
       meta: { seed: true },
     });
 
+    const priceCfg = await getPriceConfig();
+    const tiers = await listPriceTiers();
     const leads = await listLeads({ limit: 5 });
+
     return NextResponse.json({
       ok: true,
       id,
       storage: 'postgres',
+      price: {
+        mao_obra_kwp: priceCfg.mao_obra_kwp,
+        expected: MAO_OBRA_KWP,
+        tiers_count: tiers.length,
+        notes: priceCfg.notes,
+      },
       recent: leads.map((l) => ({ id: l.id, nome: l.nome, mode: l.mode, stage: l.stage })),
     });
   } catch (err) {
@@ -72,6 +92,7 @@ export async function POST(request) {
 export async function GET() {
   return NextResponse.json({
     hasDatabase: hasDatabase(),
+    mao_obra_kwp_default: MAO_OBRA_KWP,
     envHints: Object.keys(process.env).filter((k) =>
       /DATABASE|POSTGRES|NEON|PG/i.test(k)
     ),
