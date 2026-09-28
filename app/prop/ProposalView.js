@@ -127,11 +127,11 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                   <div className="way">
                     <div className="way-icon">💵</div>
                     <h4>À VISTA</h4>
-                    <div className="way-price" style={{ fontSize: '1.05rem', lineHeight: 1.35 }}>
-                      Entre {fmtDec(r.total_min || Math.round((r.total || 0) * 0.9))} e {fmtDec(r.total_max || Math.round((r.total || 0) * 1.25))}
+                    <div className="way-price" style={{ fontSize: '1.15rem', lineHeight: 1.35 }}>
+                      {fmtDec(r.total)}
                     </div>
                     <p className="way-note">
-                      Valor aproximado do sistema com instalação*. Aqui você não paga <strong>NENHUM JUROS</strong> e tem ótimo retorno sobre o investimento.
+                      Valor do sistema com instalação. Aqui você não paga <strong>NENHUM JUROS</strong> e tem ótimo retorno sobre o investimento.
                     </p>
                   </div>
                 </div>
@@ -160,12 +160,12 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                   <strong>{fmt(r.economia_mes)}</strong> na fatura de energia elétrica. O KIT de geração distribuída é composto por:
                 </p>
                 <ul className="kit-list">
-                  <li>{r.modulos} módulos de {r.modulo_w || 550}Wp;</li>
-                  <li>{r.inversor || '1 inversor On-Grid'};</li>
+                  <li>{r.modulos} módulos de {r.modulo_w || 620}Wp;</li>
+                  <li>{r.inversor || (r.mode === 'offgrid' ? '1 inversor off-grid / carregador' : r.mode === 'hibrido' ? '1 inversor híbrido' : '1 inversor on-grid')};</li>
                   <li>Conectores MC4;</li>
-                  <li>Estruturas de fixação;</li>
+                  <li>Estruturas de fixação para telha (cerâmica, fibro-cimento ou metálica);</li>
                   <li>Cabo solar especial;</li>
-                  <li>Projeto elétrico, instalação e homologação.</li>
+                  <li>Projeto elétrico, instalação e homologação junto à concessionária.</li>
                 </ul>
                 {r.baterias && (
                   <p className="body">Baterias: {r.baterias.kwh} kWh ({r.baterias.tipo})</p>
@@ -183,6 +183,23 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                   <ChartGeracao meses={r.meses} geracao={r.geracaoMensal} consumo={r.consumoMensal} />
                 )}
                 <h3 className="title-blue">Condições Gerais de Fornecimento</h3>
+                <div className="fin-logos">
+                  <span className="fin-lbl">Financiamento via:</span>
+                  <div className="fin-brands">
+                    <span className="fin-bv" title="BV Financeira">
+                      <svg viewBox="0 0 48 32" width="48" height="28" aria-hidden="true">
+                        <rect width="48" height="32" rx="4" fill="#6B2D8B"/>
+                        <text x="24" y="21" textAnchor="middle" fill="#fff" fontFamily="Arial,sans-serif" fontWeight="800" fontSize="16">BV</text>
+                      </svg>
+                    </span>
+                    <span className="fin-santander" title="Santander">
+                      <svg viewBox="0 0 120 32" width="110" height="28" aria-hidden="true">
+                        <rect width="120" height="32" rx="4" fill="#EC0000"/>
+                        <text x="60" y="21" textAnchor="middle" fill="#fff" fontFamily="Arial,sans-serif" fontWeight="700" fontSize="12">Santander</text>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
                 <table className="cond-table">
                   <tbody>
                     <tr><td>72x</td><td>{fmtDec(parcela72)}</td></tr>
@@ -190,10 +207,8 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                     <tr><td>48x</td><td>{fmtDec(parcela48)}</td></tr>
                     <tr><td>10x (cartão)</td><td>{fmtDec(parcela10)}</td></tr>
                     <tr className="inv-row">
-                      <td>Investimento aproximado*</td>
-                      <td>
-                        Entre {fmtDec(r.total_min || Math.round((r.total || 0) * 0.9))} e {fmtDec(r.total_max || Math.round((r.total || 0) * 1.25))}
-                      </td>
+                      <td>Investimento</td>
+                      <td>{fmtDec(r.total)}</td>
                     </tr>
                     <tr>
                       <td>Prazo de entrega</td>
@@ -203,9 +218,9 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                       <td>Garantia</td>
                       <td>
                         25 anos de garantia de performance para os módulos;<br />
-                        15 anos de garantia de fabricação para os módulos;<br />
-                        10 anos de garantia para os inversores;<br />
-                        Suporte gratuito Intelbras vitalício.
+                        12 anos de garantia de fabricação para os módulos;<br />
+                        10 anos de garantia de fabricação para os inversores;<br />
+                        Suporte técnico Paraty Solar.
                       </td>
                     </tr>
                     <tr>
@@ -215,7 +230,7 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                   </tbody>
                 </table>
                 <p className="fine-print">
-                  Importante! O valor da parcela é baseado em uma taxa média, porém o Programa de Financiamentos passa por análise de critério interno e de forma independente e estão sujeitos à análise e aprovação de crédito e cadastro. Valores aproximados sujeitos a variáveis de telhado, estrutura e condições climáticas.
+                  Importante! O valor da parcela é baseado em uma taxa média, porém o Programa de Financiamentos passa por análise de critério interno e de forma independente e estão sujeitos à análise e aprovação de crédito e cadastro.
                 </p>
                 <div className="page-num">4</div>
               </div>
@@ -284,9 +299,9 @@ export default function ProposalView({ r, contaCom, parcela72, parcela60, parcel
                 </p>
                 <ul className="notes-list">
                   <li>{r.notes?.lei || 'Dimensionamento alinhado à Lei 14.300/22 e REN ANEEL.'}</li>
-                  <li>15 anos de garantia de fabricação das placas / 25 anos de performance.</li>
+                  <li>12 anos de garantia de fabricação das placas / 25 anos de performance.</li>
                   <li>10 anos de garantia dos inversores.</li>
-                  <li>Suporte gratuito Intelbras vitalício incluso.</li>
+                  <li>Suporte técnico Paraty Solar.</li>
                   <li>{r.notes?.preco || 'Investimento turnkey competitivo por kWp (mercado 2026).'}</li>
                   {r.grid_zero && <li>Sistema elegível a <strong>grid-zero</strong> (potência ≤ 7,5 kWp).</li>}
                 </ul>
