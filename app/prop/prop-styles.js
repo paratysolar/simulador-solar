@@ -89,6 +89,11 @@ input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 
 .conta-line .sem{color:var(--red);font-weight:800}
 .conta-line .com{color:var(--g);font-weight:800}
 .conta-line .gen{color:var(--blue);font-weight:800}
+.fin-logos{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:12px 0 14px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px}
+.fin-lbl{font-size:.82rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em}
+.fin-brands{display:flex;align-items:center;gap:12px}
+.fin-bv,.fin-santander{display:inline-flex;align-items:center;line-height:0}
+.fin-bv svg,.fin-santander svg{display:block;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .cond-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.88rem;border-radius:8px;overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,.06)}
 .cond-table td{padding:11px 14px;border-bottom:1px solid #dbeafe;vertical-align:top}
 .cond-table tr:nth-child(odd){background:#eff6ff}
