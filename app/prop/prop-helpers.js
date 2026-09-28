@@ -1,5 +1,4 @@
-import { REAL_PHOTOS } from './photo-data';
-
+/** Fotos — Unsplash estável enquanto fotos reais sobem */
 const META = [
   { seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
   { seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
@@ -12,14 +11,35 @@ const META = [
   { seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
 ];
 
-/** Fotos reais Paraty Solar (data-URI embutido — funciona offline no deploy) */
+const UNSPLASH = {
+  cover1: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=400&fit=crop&q=80',
+  cover2: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=400&fit=crop&q=80',
+  cover3: 'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=400&h=400&fit=crop&q=80',
+  portfolio: [
+    'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1566093097221-ac02c3d8c5a4?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1592833159155-c62df1b65634?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=600&h=400&fit=crop&q=80',
+  ],
+  team: [
+    'https://images.unsplash.com/photo-1621905252507-b35492ae9793?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=600&h=400&fit=crop&q=80',
+    'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop&q=80',
+  ],
+};
+
 export const PHOTOS = {
   logo: null,
-  cover1: REAL_PHOTOS.cover1,
-  cover2: REAL_PHOTOS.cover2,
-  cover3: REAL_PHOTOS.cover3,
-  portfolio: REAL_PHOTOS.portfolio.map((src, i) => ({ src, ...META[i] })),
-  team: REAL_PHOTOS.team,
+  cover1: UNSPLASH.cover1,
+  cover2: UNSPLASH.cover2,
+  cover3: UNSPLASH.cover3,
+  portfolio: UNSPLASH.portfolio.map((src, i) => ({ src, ...META[i] })),
+  team: UNSPLASH.team,
 };
 
 export function fmt(n) {
