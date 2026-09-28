@@ -167,11 +167,11 @@ export function dimensionar(input) {
     }
   }
 
-  const use620 = kwp >= 18;
-  const modW = use620 ? 620 : 550;
+  // Módulos padrão 620W (linha atual Paraty Solar / Intelbras)
+  const modW = 620;
   const modulos = Math.ceil((kwp * 1000) / modW);
   const kwpReal = round2((modulos * modW) / 1000);
-  const area_m2 = round2(modulos * (use620 ? 2.6 : 2.4));
+  const area_m2 = round2(modulos * 2.6);
   const geracao_mes = Math.round(kwpReal * hsp * 30);
 
   const preco = calcularPrecoKwp(mode, kwpReal, priceCfg);
@@ -181,9 +181,7 @@ export function dimensionar(input) {
   const preco_kwp = preco.preco_kwp;
 
   const itens = [];
-  const modNome = use620
-    ? 'Módulo FV N-Type Bifacial 620W (Intelbras)'
-    : 'Módulo FV N-Type 550W (Intelbras / Astronergy)';
+  const modNome = 'Módulo FV N-Type Bifacial 620W';
   itens.push({ item: modNome, marca: 'Intelbras', qtd: modulos, unit: null, total: null });
 
   if (mode === 'offgrid') {
@@ -322,8 +320,8 @@ export function dimensionar(input) {
     grid_zero: mode === 'ongrid' && kwpReal <= 7.5,
     notes: {
       lei: 'Dimensionamento alinhado à Lei 14.300/22 e REN ANEEL.',
-      garantia_modulos: '15 anos de fabricação das placas / 25 anos de performance.',
-      garantia_inversor: '10 anos de garantia dos inversores + suporte gratuito Intelbras vitalício.',
+      garantia_modulos: '12 anos de fabricação das placas / 25 anos de performance.',
+      garantia_inversor: '10 anos de garantia dos inversores.',
       preco: preco.homologado
         ? `Equipamentos + mão de obra R$ ${preco.mao_obra_kwp}/kWp (instalação e homologação).`
         : 'Pacote off-grid turnkey (equipamentos + instalação).',
