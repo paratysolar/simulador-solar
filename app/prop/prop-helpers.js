@@ -1,27 +1,26 @@
-import { REAL_PHOTOS } from './photo-data';
-
-const META = [
-  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
-  { seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
-  { seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
-  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
-  { seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
-  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
-  { seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
-  { seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
-  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
-];
-
-/** Fotos reais Paraty Solar (HEIC→JPG→base64 no deploy) */
+/** Fotos — CDN estável. Fotos reais convertidas estão no zip / sandbox public/prop-photos */
 export const PHOTOS = {
   logo: null,
-  cover1: REAL_PHOTOS.cover1,
-  cover2: REAL_PHOTOS.cover2,
-  cover3: REAL_PHOTOS.cover3,
-  portfolio: REAL_PHOTOS.portfolio.map((src, i) => ({ src, ...META[i] })),
-  team: REAL_PHOTOS.team,
+  cover1: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=400&fit=crop',
+  cover2: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=400&fit=crop',
+  cover3: 'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=400&h=400&fit=crop',
+  portfolio: [
+    { src: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
+    { src: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=600&h=400&fit=crop', seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
+    { src: 'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
+    { src: 'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
+    { src: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=600&h=400&fit=crop', seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
+    { src: 'https://images.unsplash.com/photo-1566093097221-ac02c3d8c5a4?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
+    { src: 'https://images.unsplash.com/photo-1592833159155-c62df1b65634?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
+    { src: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=600&h=400&fit=crop', seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
+    { src: 'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=600&h=400&fit=crop', seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
+  ],
+  team: [
+    'https://images.unsplash.com/photo-1621905252507-b35492ae9793?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=600&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop',
+  ],
 };
-
 export function fmt(n) {
   return 'R$ ' + Math.round(n || 0).toLocaleString('pt-BR');
 }
