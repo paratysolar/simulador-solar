@@ -1,7 +1,4 @@
-/** Fotos reais — coloque os JPGs em public/prop-photos/ (cover1-3, p1-9, team1-3)
- *  Enquanto isso, fallback Unsplash para o build não quebrar.
- */
-const HAS_REAL = false; // mude para true depois de subir as fotos no GitHub
+import { REAL_PHOTOS } from './photo-data';
 
 const META = [
   { seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
@@ -15,45 +12,14 @@ const META = [
   { seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
 ];
 
-const REAL = {
-  cover1: '/prop-photos/cover1.jpg',
-  cover2: '/prop-photos/cover2.jpg',
-  cover3: '/prop-photos/cover3.jpg',
-  portfolio: ['/prop-photos/p1.jpg','/prop-photos/p2.jpg','/prop-photos/p3.jpg','/prop-photos/p4.jpg','/prop-photos/p5.jpg','/prop-photos/p6.jpg','/prop-photos/p7.jpg','/prop-photos/p8.jpg','/prop-photos/p9.jpg'],
-  team: ['/prop-photos/team1.jpg','/prop-photos/team2.jpg','/prop-photos/team3.jpg'],
-};
-
-const UNSPLASH = {
-  cover1: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=400&fit=crop',
-  cover2: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=400&fit=crop',
-  cover3: 'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=400&h=400&fit=crop',
-  portfolio: [
-    'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1566093097221-ac02c3d8c5a4?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1592833159155-c62df1b65634?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=600&h=400&fit=crop',
-  ],
-  team: [
-    'https://images.unsplash.com/photo-1621905252507-b35492ae9793?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=600&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop',
-  ],
-};
-
-const SRC = HAS_REAL ? REAL : UNSPLASH;
-
+/** Fotos reais Paraty Solar (data-URI embutido — funciona offline no deploy) */
 export const PHOTOS = {
   logo: null,
-  cover1: SRC.cover1,
-  cover2: SRC.cover2,
-  cover3: SRC.cover3,
-  portfolio: SRC.portfolio.map((src, i) => ({ src, ...META[i] })),
-  team: SRC.team,
+  cover1: REAL_PHOTOS.cover1,
+  cover2: REAL_PHOTOS.cover2,
+  cover3: REAL_PHOTOS.cover3,
+  portfolio: REAL_PHOTOS.portfolio.map((src, i) => ({ src, ...META[i] })),
+  team: REAL_PHOTOS.team,
 };
 
 export function fmt(n) {
