@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Preços padrão | Paraty Solar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --g:#00B26B; --gd:#009558; --t:#3E5055; --m:#8B979F; --b:#D5DEE5; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Nunito Sans',system-ui,sans-serif;background:#f5f7fa;color:var(--t);min-height:100vh}
+    .nav{background:var(--g);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+    .nav a{color:#fff;text-decoration:none;font-weight:700}
+    .wrap{max-width:720px;margin:32px auto;padding:0 16px}
+    h1{font-size:1.4rem;margin-bottom:8px}
+    .sub{color:var(--m);font-size:.9rem;margin-bottom:24px}
+    .card{background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.06);padding:24px;margin-bottom:20px}
+    .card h2{font-size:1.05rem;margin-bottom:16px;color:var(--g)}
+    label{display:block;font-size:.8rem;color:var(--m);margin-bottom:4px;font-weight:600}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+    input{width:100%;padding:10px 12px;border:1.5px solid var(--b);border-radius:8px;font-size:.95rem;font-family:inherit}
+    input:focus{outline:none;border-color:var(--g)}
+    .hint{font-size:.75rem;color:var(--m);margin-top:4px}
+    .btn{background:var(--g);color:#fff;border:0;border-radius:999px;padding:12px 28px;font-weight:700;font-size:1rem;cursor:pointer;font-family:inherit}
+    .btn:hover{background:var(--gd)}
+    .btn-out{background:#fff;color:var(--g);border:1.5px solid var(--g);margin-left:8px}
+    .login{max-width:360px;margin:80px auto;padding:0 16px}
+    .err{color:#c0392b;font-size:.85rem;margin-top:8px;display:none}
+    .ok{background:#e8f8ef;color:var(--gd);padding:10px 14px;border-radius:8px;margin-bottom:16px;display:none;font-size:.9rem}
+    table{width:100%;border-collapse:collapse;font-size:.9rem}
+    td,th{padding:8px;text-align:left;border-bottom:1px solid #eee}
+    th{color:var(--m);font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="/">Paraty Solar</a>
+    <span style="opacity:.9;font-size:.9rem">Administração de preços</span>
+  </div>
+
+  <div id="loginBox" class="login">
+    <div class="card">
+      <h2>Acesso restrito</h2>
+      <p class="sub">Digite a senha de administração (mesma do painel de propostas).</p>
+      <label>Senha</label>
+      <input type="password" id="pwd" placeholder="Senha" />
+      <div class="err" id="loginErr">Senha incorreta</div>
+      <div style="margin-top:16px">
+        <button class="btn" onclick="doLogin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="adminBox" class="wrap" style="display:none">
+    <h1>Preços padrão do simulador</h1>
+    <p class="sub">Valores em <strong>R$/kWp turnkey</strong> (equipamentos + instalação). O resultado exibe a faixa Entre −10% e +25%.</p>
+    <div class="ok" id="savedMsg">Preços salvos com sucesso.</div>
+
+    <div class="card">
+      <h2>On-grid (homologado)</h2>
+      <div class="row">
+        <div><label>Base (≤ 4 kWp)</label><input type="number" id="og_base" value="3100" /><div class="hint">ex.: 3100</div></div>
+        <div><label>Mid (4–8 kWp)</label><input type="number" id="og_mid" value="2900" /></div>
+      </div>
+      <div class="row">
+        <div><label>Large (8–15 kWp)</label><input type="number" id="og_large" value="2750" /></div>
+        <div><label>XL (≥ 15 kWp)</label><input type="number" id="og_xl" value="2920" /><div class="hint">Intelbras ~80 kWp ≈ 2.800–3.640</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Off-grid (com baterias)</h2>
+      <div class="row">
+        <div><label>Base (≤ 4 kWp)</label><input type="number" id="of_base" value="9200" /></div>
+        <div><label>Mid (4–8 kWp)</label><input type="number" id="of_mid" value="8500" /></div>
+      </div>
+      <div class="row">
+        <div><label>Large (8–15 kWp)</label><input type="number" id="of_large" value="7800" /></div>
+        <div><label>XL (≥ 15 kWp)</label><input type="number" id="of_xl" value="7200" /></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Faixa exibida no resultado</h2>
+      <div class="row">
+        <div><label>Mínimo (% do total)</label><input type="number" id="f_min" value="90" /><div class="hint">90 = −10%</div></div>
+        <div><label>Máximo (% do total)</label><input type="number" id="f_max" value="125" /><div class="hint">125 = +25%</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Prévia (exemplo 26,66 kWp on-grid)</h2>
+      <table>
+        <tr><th>Campo</th><th>Valor</th></tr>
+        <tr><td>R$/kWp (XL)</td><td id="pv_kwp">—</td></tr>
+        <tr><td>Total central</td><td id="pv_tot">—</td></tr>
+        <tr><td>Faixa exibida</td><td id="pv_range">—</td></tr>
+      </table>
+    </div>
+
+    <button class="btn" onclick="saveCfg()">Salvar preços</button>
+    <button class="btn btn-out" onclick="resetCfg()">Restaurar padrão</button>
+    <button class="btn btn-out" onclick="location.href='/'">Voltar ao simulador</button>
+  </div>
+
+<script>
+const DEFAULT = {
+  ongrid: { base: 3100, mid: 2900, large: 2750, xl: 2920 },
+  offgrid: { base: 9200, mid: 8500, large: 7800, xl: 7200 },
+  faixa_min: 90, faixa_max: 125
+};
+const AUTH_KEY = 'ps_admin_ok';
+
+function doLogin() {
+  const p = document.getElementById('pwd').value;
+  if (p && p.length >= 4) {
+    sessionStorage.setItem(AUTH_KEY, p);
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('adminBox').style.display = 'block';
+    loadCfg();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+  }
+}
+
+function loadCfg() {
+  let cfg = DEFAULT;
+  try {
+    const s = localStorage.getItem('ps_price_cfg');
+    if (s) cfg = { ...DEFAULT, ...JSON.parse(s) };
+  } catch (e) {}
+  document.getElementById('og_base').value = cfg.ongrid.base;
+  document.getElementById('og_mid').value = cfg.ongrid.mid;
+  document.getElementById('og_large').value = cfg.ongrid.large;
+  document.getElementById('og_xl').value = cfg.ongrid.xl;
+  document.getElementById('of_base').value = cfg.offgrid.base;
+  document.getElementById('of_mid').value = cfg.offgrid.mid;
+  document.getElementById('of_large').value = cfg.offgrid.large;
+  document.getElementById('of_xl').value = cfg.offgrid.xl;
+  document.getElementById('f_min').value = cfg.faixa_min || 90;
+  document.getElementById('f_max').value = cfg.faixa_max || 125;
+  updatePreview();
+  ['og_base','og_mid','og_large','og_xl','f_min','f_max'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePreview);
+  });
+}
+
+function getCfg() {
+  return {
+    ongrid: {
+      base: +document.getElementById('og_base').value || 3100,
+      mid: +document.getElementById('og_mid').value || 2900,
+      large: +document.getElementById('og_large').value || 2750,
+      xl: +document.getElementById('og_xl').value || 2920,
+    },
+    offgrid: {
+      base: +document.getElementById('of_base').value || 9200,
+      mid: +document.getElementById('of_mid').value || 8500,
+      large: +document.getElementById('of_large').value || 7800,
+      xl: +document.getElementById('of_xl').value || 7200,
+    },
+    faixa_min: +document.getElementById('f_min').value || 90,
+    faixa_max: +document.getElementById('f_max').value || 125,
+  };
+}
+
+function updatePreview() {
+  const c = getCfg();
+  const kwp = 26.66;
+  const unit = c.ongrid.xl;
+  const tot = Math.round(kwp * unit);
+  const mn = Math.round(tot * (c.faixa_min / 100));
+  const mx = Math.round(tot * (c.faixa_max / 100));
+  document.getElementById('pv_kwp').textContent = 'R$ ' + unit.toLocaleString('pt-BR') + '/kWp';
+  document.getElementById('pv_tot').textContent = 'R$ ' + tot.toLocaleString('pt-BR');
+  document.getElementById('pv_range').textContent = 'Entre R$ ' + mn.toLocaleString('pt-BR') + ' e R$ ' + mx.toLocaleString('pt-BR');
+}
+
+function saveCfg() {
+  const cfg = getCfg();
+  localStorage.setItem('ps_price_cfg', JSON.stringify(cfg));
+  const pwd = sessionStorage.getItem(AUTH_KEY) || '';
+  if (pwd) {
+    fetch('/api/pricing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-prop-auth': pwd },
+      body: JSON.stringify({
+        mao_obra_kwp: 1320,
+        equip: {
+          ongrid: {
+            base: Math.max(0, cfg.ongrid.base - 1320),
+            mid: Math.max(0, cfg.ongrid.mid - 1320),
+            large: Math.max(0, cfg.ongrid.large - 1320),
+            xl: Math.max(0, cfg.ongrid.xl - 1320),
+          },
+          offgrid: cfg.offgrid,
+          hibrido: {
+            base: Math.round(cfg.ongrid.base * 1.35),
+            mid: Math.round(cfg.ongrid.mid * 1.35),
+            large: Math.round(cfg.ongrid.large * 1.35),
+            xl: Math.round(cfg.ongrid.xl * 1.35),
+          },
+        },
+        notes: 'Atualizado via admin-precos.html',
+      }),
+    }).catch(() => {});
+  }
+  document.getElementById('savedMsg').style.display = 'block';
+  setTimeout(() => document.getElementById('savedMsg').style.display = 'none', 3000);
+  updatePreview();
+}
+
+function resetCfg() {
+  localStorage.removeItem('ps_price_cfg');
+  loadCfg();
+  document.getElementById('savedMsg').textContent = 'Padrões restaurados.';
+  document.getElementById('savedMsg').style.display = 'block';
+}
+
+if (sessionStorage.getItem(AUTH_KEY)) {
+  document.getElementById('loginBox').style.display = 'none';
+  document.getElementById('adminBox').style.display = 'block';
+  loadCfg();
+}
+document.getElementById('pwd').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>
