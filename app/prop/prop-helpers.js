@@ -17,6 +17,25 @@ const META = [
   { title: 'Residencial — telha colonial', potencia: '3,10 kWp', place: 'Paraty – RJ' },
 ];
 
+function enrich(item, i) {
+  const m = META[i % META.length] || {};
+  const title = item.title || m.title || 'Instalação';
+  const potencia = item.potencia || m.potencia || '';
+  const place = item.place || m.place || 'Paraty – RJ';
+  return {
+    src: item.src || item,
+    title,
+    potencia,
+    place,
+    // compat com ProposalView legado
+    seg: title,
+    cid: place,
+    mods: potencia || '—',
+    gen: potencia ? `~${potencia}` : '—',
+    econ: '—',
+  };
+}
+
 const FALLBACK_PHOTOS = {
   logo: null,
   cover1: '/prop-photos/20240505_155359.jpg',
@@ -38,7 +57,7 @@ const FALLBACK_PHOTOS = {
     { src: '/prop-photos/foto-todos-os-paineis3.jpg', title: 'Rural — galpão metálico', potencia: '24,80 kWp', place: 'Costa Verde – RJ' },
     { src: '/prop-photos/Simulador-De-Energia-Solar-Fotovoltaica-3-1024x576.jpg', title: 'Industrial — galpão', potencia: '49,60 kWp', place: 'Região – RJ' },
     { src: '/prop-photos/images_11.jpg', title: 'Residencial — telha colonial', potencia: '3,10 kWp', place: 'Paraty – RJ' },
-  ],
+  ].map((it, i) => enrich(it, i)),
   team: [
     '/prop-photos/20251021_145736.jpg',
     '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.54.jpg',
@@ -48,7 +67,6 @@ const FALLBACK_PHOTOS = {
   ],
 };
 
-/** Fotos ativas: config do admin (sessionStorage) → fallback local */
 export function getPhotos() {
   if (typeof window !== 'undefined') {
     try {
@@ -62,12 +80,7 @@ export function getPhotos() {
             cover2: p.cover2 || FALLBACK_PHOTOS.cover2,
             cover3: p.cover3 || FALLBACK_PHOTOS.cover3,
             portfolio: Array.isArray(p.portfolio) && p.portfolio.length
-              ? p.portfolio.map((item, i) => ({
-                  src: item.src || item,
-                  title: item.title || META[i % META.length]?.title || 'Instalação',
-                  potencia: item.potencia || META[i % META.length]?.potencia || '',
-                  place: item.place || META[i % META.length]?.place || 'Paraty – RJ',
-                }))
+              ? p.portfolio.map((item, i) => enrich(item, i))
               : FALLBACK_PHOTOS.portfolio,
             team: Array.isArray(p.team) && p.team.length ? p.team : FALLBACK_PHOTOS.team,
           };
