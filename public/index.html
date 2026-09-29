@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simulador de energia solar | Paraty Solar</title>
-  <meta name="description" content="Simule seu sistema de energia solar e descubra quanto pode economizar na conta de luz.">
+  <meta name="description" content="Simule seu sistema de energia solar On-Grid, Off-Grid ou Híbrido.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -66,18 +66,18 @@
       </div>
       <div class="ib-step" id="step3">
         <p class="ib-step-label">3. Quanto é o seu gasto médio mensal com conta de luz?</p>
-        <p class="ib-hint">*Dados fornecidos na sua conta de luz</p>
+        <p class="ib-hint">*Dados fornecidos na sua conta de luz (apenas para locais com rede elétrica)</p>
         <div class="ib-field">
           <input type="text" id="campoGasto" placeholder="R$*" inputmode="decimal" oninput="onGastoInput(this)" autocomplete="off">
         </div>
       </div>
       <div class="ib-step" id="stepOffgrid" style="display:none">
-        <p class="ib-step-label" style="color:#00A86B">Para realizarmos o cálculo do consumo diário de energia, identifique os equipamentos utilizados.</p>
+        <p class="ib-step-label" style="color:#00A86B">Local sem rede elétrica: o dimensionamento usa os equipamentos e o consumo diário — não há conta de luz.</p>
         <p class="ib-step-label">3. Selecione os Equipamentos Utilizados.</p>
         <div id="ogSummary" class="og-summary" style="display:none"><strong>Consumo estimado:</strong> <span id="ogWhDia">0</span> Wh/dia</div>
       </div>
       <div class="ib-step ib-step-contact" id="step4" style="display:none">
-        <p class="ib-contact-intro">Insira seus dados abaixo e descubra o custo do seu gerador solar e quanto irá economizar por ano!</p>
+        <p class="ib-contact-intro">Insira seus dados abaixo e descubra o custo do seu gerador solar!</p>
         <div class="ib-field"><label>Nome</label><input type="text" id="campoNome" placeholder="Seu nome completo" oninput="checkReady()"></div>
         <div class="ib-field"><label>E-mail</label><input type="email" id="campoEmail" placeholder="seu@email.com" oninput="checkReady()"></div>
         <div class="ib-field"><label>Celular</label><input type="tel" id="campoCelular" placeholder="(00) 00000-0000" oninput="formatPhone(this); checkReady()"></div>
@@ -152,8 +152,8 @@
       <div class="ib-modal-ico">
         <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="22" stroke="#00B26B" stroke-width="1.8"/><path d="M20 28h16M28 20v16" stroke="#00B26B" stroke-width="1.6" stroke-linecap="round"/><rect x="22" y="24" width="12" height="8" rx="1.2" stroke="#00B26B" stroke-width="1.4"/><text x="28" y="30.5" text-anchor="middle" font-size="7" fill="#00B26B" font-weight="700">$</text></svg>
       </div>
-      <p class="ib-modal-title">Ops, parece que <u>seu consumo é muito baixo</u> e talvez não traga o retorno que estava esperando.</p>
-      <p class="ib-modal-body">Você deve adicionar um valor acima de <strong>R$ 150,00</strong> para continuar com a simulação.</p>
+      <p class="ib-modal-title">Ops, parece que <u>sua conta de luz é muito baixa</u> e talvez não traga o retorno que estava esperando.</p>
+      <p class="ib-modal-body">Para sistemas <strong>ligados à rede (on-grid)</strong>, informe um valor de conta acima de <strong>R$ 150,00</strong> para continuar.<br><br>Se o local <strong>não tem rede elétrica</strong>, escolha a opção <strong>“Sem conexão com a rede elétrica”</strong> (off-grid) — nesse caso não existe conta de luz.</p>
       <div class="ib-modal-actions">
         <button type="button" class="ib-modal-btn-out" onclick="sairSimulador()">Sair do simulador</button>
         <button type="button" class="ib-modal-btn" onclick="fecharModalBaixo()">Continuar simulação</button>
