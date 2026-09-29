@@ -1,9 +1,12 @@
 /**
  * Precificação Paraty Solar
- * - Equipamentos por faixa de kWp (tabela no banco)
+ * - Equipamentos por catálogo real (Intelbras Loja Solar)
  * - Mão de obra kits homologados: R$ 1.320 / kWp (fixo)
- * Cliente vê total turnkey + R$/kWp, sem unitário detalhado.
+ * - Kits on-grid/híbrido: isenção ICMS 15% sobre produtos
+ * Cliente vê total turnkey + R$/kWp, com itens detalhados do catálogo.
  */
+
+import { buildKitBom, ICMS_RATE, pickModule } from './catalog.js';
 
 export const HSP = {
   AC: 4.5, AL: 5.2, AP: 4.6, AM: 4.4, BA: 5.4, CE: 5.5, DF: 5.2, ES: 4.8,
@@ -16,24 +19,21 @@ export const HSP = {
 export const MAO_OBRA_KWP = 1320;
 
 /**
- * Preço de equipamentos por kWp (sem mão de obra) — defaults; sobrescritos pelo banco.
- * Turnkey alvo alinhado à faixa Intelbras (~R$ 2.800–3.640/kWp em sistemas grandes):
- * on-grid: 3100 / 2900 / 2750 / 2920 (xl ≥15 kWp)
+ * Preço de equipamentos por kWp (sem mão de obra) — fallback legado; sobrescritos pelo BOM real.
  */
 export const EQUIP_KWP = {
   ongrid: {
-    base: 1780,  // ≤4 kWp  → turnkey 3100
-    mid: 1580,   // 4–8     → 2900
-    large: 1430, // 8–15    → 2750
-    xl: 1600,    // >15     → 2920 (faixa Intelbras ~80 kWp)
+    base: 1780,
+    mid: 1580,
+    large: 1430,
+    xl: 1600,
   },
   hibrido: {
-    base: 2880,  // 4200
-    mid: 2580,   // 3900
-    large: 2280, // 3600
-    xl: 2080,    // 3400
+    base: 2880,
+    mid: 2580,
+    large: 2280,
+    xl: 2080,
   },
-  // Off-grid: mão de obra embutida no pacote
   offgrid: {
     base: 5200,
     mid: 4800,
@@ -42,7 +42,6 @@ export const EQUIP_KWP = {
   },
 };
 
-/** Compat: total turnkey legado */
 export const PRECO_KWP = {
   ongrid: {
     base: EQUIP_KWP.ongrid.base + MAO_OBRA_KWP,
@@ -60,17 +59,12 @@ export const PRECO_KWP = {
 };
 
 export const CATALOG = {
-  modulo_450: { nome: 'Módulo FV N-Type Bifacial 450W', marca: 'Astronergy / Intelbras', unit: 420, w: 450 },
-  modulo_550: { nome: 'Módulo FV N-Type 550W', marca: 'Intelbras / Astronergy', unit: 480, w: 550 },
-  modulo_620: { nome: 'Módulo FV EMSS-620B N-Type Bifacial', marca: 'Intelbras', unit: 580, w: 620 },
-  inv_isv_2002: { nome: 'Inversor Onda Senoidal ISV 2002', marca: 'Intelbras', unit: 1890 },
-  inv_ics_5002: { nome: 'Inversor Carregador SEN ICS 5002 G2', marca: 'Intelbras', unit: 4200 },
-  inv_hibrido_6k: { nome: 'Inversor On-Grid IONS 6K M Híbrido', marca: 'Intelbras', unit: 6800 },
-  inv_ongrid_5k: { nome: 'Inversor On-Grid 5kW String', marca: 'Intelbras', unit: 2800 },
-  mppt_2024: { nome: 'Controlador Carga MPPT ECM 2024 G2', marca: 'Intelbras', unit: 890 },
-  bat_pb_60: { nome: 'Bateria Estacionária Pb 12V 60Ah', marca: 'Intelbras', unit: 620, kwh: 0.72 },
-  bat_pb_150: { nome: 'Bateria Estacionária Pb 12V 150Ah', marca: 'Intelbras', unit: 980, kwh: 1.8 },
-  bat_li_dyness: { nome: 'Bateria Lítio Dyness 51,2V 100Ah (5,12 kWh)', marca: 'Dyness', unit: 4800, kwh: 5.12 },
+  modulo_620: { nome: 'Módulo FV EMSS-620B N-Type Bifacial', marca: 'Intelbras', unit: 716.18, w: 620 },
+  inv_ics_5002: { nome: 'Inversor Carregador SEN ICS 5002 G2', marca: 'Intelbras', unit: 4913.14 },
+  inv_hibrido_6k: { nome: 'Inversor On-Grid IONS 6K M Híbrido', marca: 'Intelbras', unit: 10430.64 },
+  inv_ongrid_5k: { nome: 'Inversor On-Grid IONS-5K M5 AFCI', marca: 'Intelbras', unit: 3837.84 },
+  bat_pb_150: { nome: 'Bateria Estacionária Pb 12V 150Ah', marca: 'Intelbras', unit: 1230.41, kwh: 1.8 },
+  bat_li_dyness: { nome: 'Bateria Lítio Dyness 51,2V 100Ah (5,12 kWh)', marca: 'Dyness', unit: 8080.24, kwh: 5.12 },
 };
 
 const MONTH_FACTORS = [0.85, 0.88, 0.92, 0.95, 1.02, 1.05, 1.08, 1.06, 1.02, 0.98, 0.90, 0.86];
@@ -86,17 +80,12 @@ function faixaKey(kwp) {
   return 'xl';
 }
 
-/**
- * Calcula preço de equipamentos e mão de obra.
- * @param {object} [cfg] — override do banco { mao_obra_kwp, equip: { ongrid, hibrido, offgrid } }
- */
 export function calcularPrecoKwp(mode, kwp, cfg) {
   const m = mode || 'ongrid';
   const fk = faixaKey(kwp);
   const equipTable = (cfg?.equip && cfg.equip[m]) || EQUIP_KWP[m] || EQUIP_KWP.ongrid;
   const equip = Number(equipTable[fk]) || EQUIP_KWP.ongrid.base;
 
-  // Kits homologados (on-grid e híbrido): mão de obra R$ 1320/kWp
   const isHomologado = m === 'ongrid' || m === 'hibrido';
   const maoObraUnit = isHomologado
     ? (Number(cfg?.mao_obra_kwp) || MAO_OBRA_KWP)
@@ -106,7 +95,6 @@ export function calcularPrecoKwp(mode, kwp, cfg) {
   const total = equip_total + mao_obra;
   const preco_kwp = kwp > 0 ? money(total / kwp) : equip + maoObraUnit;
 
-  // Faixa estimada (estilo Intelbras ~80 kWp: R$ 223k–291k ≈ −10% a +25%)
   const total_min = money(total * 0.90);
   const total_max = money(total * 1.25);
   const preco_kwp_min = kwp > 0 ? money(total_min / kwp) : money(preco_kwp * 0.90);
@@ -143,7 +131,6 @@ export function dimensionar(input) {
   const hsp = HSP[uf] || 4.8;
   const gasto = Number(input.gasto_rs) || 0;
   const whDia = Number(input.wh_dia) || 0;
-  // cfg do banco: { mao_obra_kwp, equip: { ongrid, hibrido, offgrid } }
   const priceCfg = input.price_cfg || null;
 
   let consumoKwh, kwp, batKwh = 0;
@@ -167,61 +154,79 @@ export function dimensionar(input) {
     }
   }
 
-  // Módulos padrão 620W (linha atual Paraty Solar / Intelbras)
   const modW = 620;
   const modulos = Math.ceil((kwp * 1000) / modW);
   const kwpReal = round2((modulos * modW) / 1000);
   const area_m2 = round2(modulos * 2.6);
   const geracao_mes = Math.round(kwpReal * hsp * 30);
 
-  const preco = calcularPrecoKwp(mode, kwpReal, priceCfg);
-  const total = preco.total;
-  const total_min = preco.total_min;
-  const total_max = preco.total_max;
-  const preco_kwp = preco.preco_kwp;
+  // BOM real (catálogo Intelbras) + isenção ICMS 15% em kits on-grid/híbrido
+  const bom = buildKitBom({ mode, kwp: kwpReal, modulos, batKwh });
+  const maoObraUnit = (mode === 'ongrid' || mode === 'hibrido')
+    ? (Number(priceCfg?.mao_obra_kwp) || MAO_OBRA_KWP)
+    : 0;
+  const mao_obra = mode === 'offgrid' ? 0 : money(kwpReal * maoObraUnit);
+  const equip_total = money(bom.subtotal_produtos);
+  const total = equip_total + mao_obra;
+  const total_min = money(total * 0.90);
+  const total_max = money(total * 1.25);
+  const preco_kwp = kwpReal > 0 ? money(total / kwpReal) : 0;
+  const preco = {
+    equip_kwp: kwpReal > 0 ? money(equip_total / kwpReal) : 0,
+    mao_obra_kwp: maoObraUnit,
+    equip_total,
+    mao_obra,
+    total,
+    total_min,
+    total_max,
+    preco_kwp,
+    preco_kwp_min: kwpReal > 0 ? money(total_min / kwpReal) : 0,
+    preco_kwp_max: kwpReal > 0 ? money(total_max / kwpReal) : 0,
+    homologado: mode === 'ongrid' || mode === 'hibrido',
+    faixa: faixaKey(kwpReal),
+    desconto_icms: bom.desconto_icms,
+    subtotal_com_icms: bom.subtotal_com_icms,
+    icms_isento: bom.icms_isento,
+  };
 
-  const itens = [];
-  const modNome = 'Módulo FV N-Type Bifacial 620W';
-  itens.push({ item: modNome, marca: 'Intelbras', qtd: modulos, unit: null, total: null });
-
-  if (mode === 'offgrid') {
-    if (kwpReal <= 0.6) {
-      itens.push({ item: 'Inversor Onda Senoidal ISV 2002 + MPPT', marca: 'Intelbras', qtd: 1, unit: null, total: null });
-    } else {
-      const invQtd = Math.max(1, Math.ceil(kwpReal / 5));
-      itens.push({ item: 'Inversor Carregador SEN ICS 5002 G2', marca: 'Intelbras', qtd: invQtd, unit: null, total: null });
-    }
-    if (batKwh >= 3) {
-      const nBat = Math.max(1, Math.ceil(batKwh / 5.12));
-      itens.push({ item: 'Bateria Lítio Dyness 5,12 kWh', marca: 'Dyness', qtd: nBat, unit: null, total: null });
-      batKwh = round2(nBat * 5.12);
-    } else {
-      const nBat = Math.max(2, Math.ceil(batKwh / 1.8));
-      itens.push({ item: 'Bateria Estacionária Pb 150Ah', marca: 'Intelbras', qtd: nBat, unit: null, total: null });
-      batKwh = round2(nBat * 1.8);
-    }
-  } else if (mode === 'hibrido') {
-    const invQtd = Math.max(1, Math.ceil(kwpReal / 6));
-    itens.push({ item: 'Inversor Híbrido IONS 6K M', marca: 'Intelbras', qtd: invQtd, unit: null, total: null });
-    const nBat = Math.max(1, Math.ceil(batKwh / 5.12));
-    itens.push({ item: 'Bateria Lítio Dyness 5,12 kWh', marca: 'Dyness', qtd: nBat, unit: null, total: null });
-    batKwh = round2(nBat * 5.12);
-  } else {
-    const invQtd = Math.max(1, Math.ceil(kwpReal / 5));
-    itens.push({ item: 'Inversor On-Grid String 5kW', marca: 'Intelbras', qtd: invQtd, unit: null, total: null });
-  }
-
-  itens.push({ item: 'Estrutura de fixação + cabos + string box + conectores', marca: 'Paraty Solar', qtd: 1, unit: null, total: null });
-  if (preco.homologado) {
+  const itens = bom.items.map((i) => ({
+    sku: i.sku,
+    item: i.item,
+    marca: i.marca,
+    categoria: i.categoria,
+    qtd: i.qtd,
+    unit: i.unit,
+    total: i.total,
+  }));
+  if (bom.desconto_icms > 0) {
     itens.push({
-      item: `Mão de obra instalação e homologação (R$ ${preco.mao_obra_kwp.toLocaleString('pt-BR')}/kWp)`,
+      item: `Isenção ICMS ${Math.round(ICMS_RATE * 100)}% (kit homologado)`,
+      marca: 'Legislação GD',
+      qtd: 1,
+      unit: -bom.desconto_icms,
+      total: -bom.desconto_icms,
+    });
+  }
+  if (mao_obra > 0) {
+    itens.push({
+      item: `Mão de obra instalação e homologação (R$ ${maoObraUnit.toLocaleString('pt-BR')}/kWp)`,
+      marca: 'Paraty Solar',
+      qtd: 1,
+      unit: mao_obra,
+      total: mao_obra,
+    });
+  } else if (mode === 'offgrid') {
+    itens.push({
+      item: 'Projeto elétrico, instalação e comissionamento (incluso no pacote)',
       marca: 'Paraty Solar',
       qtd: 1,
       unit: null,
       total: null,
     });
-  } else {
-    itens.push({ item: 'Projeto elétrico, instalação e comissionamento', marca: 'Paraty Solar', qtd: 1, unit: null, total: null });
+  }
+  const batItem = bom.items.find((i) => i.categoria === 'baterias');
+  if (batItem && batItem.sku === '4301496') {
+    batKwh = round2(batItem.qtd * 5.12);
   }
 
   const economiaMes = mode === 'offgrid'
@@ -229,8 +234,6 @@ export function dimensionar(input) {
     : Math.min(gasto * 0.92, geracao_mes * tarifa * 0.95);
   const economia_ano = money(economiaMes * 12);
   const payback_anos = economia_ano > 0 ? round2(total / economia_ano) : 0;
-  // Payback em faixa conservadora (estilo Intelbras: "Entre 4 e 5 anos")
-  // Usa fator 1,6–2,2× o payback simples para refletir tarifas, degradação e análise de crédito
   const pbSimples = economia_ano > 0 ? total / economia_ano : 0;
   const payback_min = pbSimples > 0 ? Math.max(2, Math.floor(pbSimples * 1.6)) : 0;
   const payback_max = pbSimples > 0 ? Math.max(payback_min + 1, Math.ceil(pbSimples * 2.2)) : 0;
@@ -280,7 +283,7 @@ export function dimensionar(input) {
     mao_obra: preco.mao_obra,
     homologado: preco.homologado,
     faixa: preco.faixa,
-    inversor: itens.find((i) => /inversor/i.test(i.item))?.item || '',
+    inversor: bom.inversor?.nome || itens.find((i) => /inversor/i.test(i.item))?.item || '',
     baterias: batKwh > 0 ? { kwh: batKwh, tipo: batKwh >= 3 ? 'LiFePO4 Dyness' : 'Pb-Ácido Intelbras' } : null,
     area_m2,
     geracao_mes,
@@ -307,6 +310,9 @@ export function dimensionar(input) {
     total,
     total_min,
     total_max,
+    desconto_icms: bom.desconto_icms || 0,
+    subtotal_com_icms: bom.subtotal_com_icms || equip_total,
+    icms_isento: Boolean(bom.icms_isento),
     geracaoMensal,
     consumoMensal,
     meses: MONTHS,
@@ -323,13 +329,15 @@ export function dimensionar(input) {
       garantia_modulos: '12 anos de fabricação das placas / 25 anos de performance.',
       garantia_inversor: '10 anos de garantia dos inversores.',
       preco: preco.homologado
-        ? `Equipamentos + mão de obra R$ ${preco.mao_obra_kwp}/kWp (instalação e homologação).`
+        ? `Produtos Intelbras (catálogo) com isenção ICMS 15% + mão de obra R$ ${preco.mao_obra_kwp}/kWp.`
         : 'Pacote off-grid turnkey (equipamentos + instalação).',
+      icms: bom.icms_isento
+        ? `Kit homologado: isenção de ICMS sobre produtos (R$ ${Number(bom.desconto_icms || 0).toLocaleString('pt-BR')}).`
+        : null,
     },
   };
 }
 
-/** Defaults para seed no banco */
 export function defaultPriceConfig() {
   return {
     mao_obra_kwp: MAO_OBRA_KWP,
