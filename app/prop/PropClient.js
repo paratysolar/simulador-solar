@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { STYLES } from './prop-styles';
-import { PHOTOS, fmt, fmtDec, ChartGeracao, ChartRetorno, TopBar, DEFAULT_EQUIP } from './prop-helpers';
+import { fmt, DEFAULT_EQUIP } from './prop-helpers';
 import ProposalView from './ProposalView';
+import SettingsPanel from './SettingsPanel';
 
 export default function PropPage() {
   const [auth, setAuth] = useState('');
@@ -23,10 +24,13 @@ export default function PropPage() {
   const [priceMsg, setPriceMsg] = useState('');
   const [priceBusy, setPriceBusy] = useState(false);
   const [showPriceEdit, setShowPriceEdit] = useState(false);
+  const [view, setView] = useState('gerar');
+
   useEffect(() => {
     const s = sessionStorage.getItem('prop_auth');
     if (s) setAuth(s);
   }, []);
+
   async function login(e) {
     e.preventDefault();
     setLoginErr('');
@@ -42,6 +46,7 @@ export default function PropPage() {
       setAuth(pwd);
     } catch { setLoginErr('Erro de conexão'); }
   }
+
   async function loadList() {
     try {
       const res = await fetch('/api/prop', { headers: { 'x-prop-auth': auth } });
@@ -49,6 +54,7 @@ export default function PropPage() {
       if (res.ok) setList(data.proposals || []);
     } catch {}
   }
+
   async function loadPricing() {
     try {
       const res = await fetch('/api/pricing', { headers: { 'x-prop-auth': auth } });
@@ -69,6 +75,7 @@ export default function PropPage() {
       }
     } catch {}
   }
+
   async function savePricing(e) {
     e?.preventDefault?.();
     setPriceBusy(true);
@@ -80,17 +87,14 @@ export default function PropPage() {
         body: JSON.stringify({
           mao_obra_kwp: Number(editMao) || 1320,
           equip: editEquip,
-          notes: `Mão de obra R$ ${editMao}/kWp em kits homologados (on-grid/híbrido).`,
+          notes: `Mão de obra R$ ${editMao}/kWp em kits homologados.`,
           updated_by: 'prop-ui',
         }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setPriceMsg(data.error || 'Erro ao salvar');
-        return;
-      }
+      if (!res.ok) { setPriceMsg(data.error || 'Erro ao salvar'); return; }
       setPriceCfg(data.config);
-      setPriceMsg(data.message || 'Precificação salva com sucesso.');
+      setPriceMsg(data.message || 'Precificação salva.');
       setShowPriceEdit(false);
     } catch (ex) {
       setPriceMsg(String(ex.message || ex));
@@ -98,6 +102,7 @@ export default function PropPage() {
       setPriceBusy(false);
     }
   }
+
   async function seedPricing() {
     setPriceBusy(true);
     setPriceMsg('');
@@ -113,27 +118,36 @@ export default function PropPage() {
           hibrido: { ...DEFAULT_EQUIP.hibrido, ...(eq.hibrido || {}) },
           offgrid: { ...DEFAULT_EQUIP.offgrid, ...(eq.offgrid || {}) },
         });
-        setPriceMsg('Tabelas de preço seedadas (mão de obra R$ 1.320/kWp).');
-      } else {
-        setPriceMsg(data.error || 'Falha no seed');
-      }
+        setPriceMsg('Tabelas seedadas (mão de obra R$ 1.320/kWp).');
+      } else setPriceMsg(data.error || 'Falha no seed');
     } catch (ex) {
       setPriceMsg(String(ex.message || ex));
     } finally {
       setPriceBusy(false);
     }
   }
+
   useEffect(() => {
     if (auth) {
       loadList();
       loadPricing();
+      fetch('/api/prop/settings', { headers: { 'x-prop-auth': auth } })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.photos) {
+            try { sessionStorage.setItem('ps_proposal_photos', JSON.stringify(d.photos)); } catch (_) {}
+          }
+        })
+        .catch(() => {});
     }
   }, [auth]);
+
   function turnkey(modeKey, faixa) {
     const equip = (editEquip[modeKey] && editEquip[modeKey][faixa]) || 0;
     const mo = modeKey === 'offgrid' ? 0 : (Number(editMao) || 1320);
     return equip + mo;
   }
+
   async function gerar(e) {
     e.preventDefault();
     setBusy(true); setErr(''); setResult(null);
@@ -158,12 +172,14 @@ export default function PropPage() {
     } catch (ex) { setErr(String(ex.message || ex)); }
     finally { setBusy(false); }
   }
+
   function logout() { sessionStorage.removeItem('prop_auth'); setAuth(''); }
   function openProposal(p) {
     const full = p.payload ? { ...p, ...(typeof p.payload === 'string' ? JSON.parse(p.payload) : p.payload) } : p;
     setResult(full);
     setTimeout(() => document.getElementById('proposta')?.scrollIntoView({ behavior: 'smooth' }), 100);
   }
+
   if (!auth) {
     return (
       <>
@@ -181,17 +197,22 @@ export default function PropPage() {
       </>
     );
   }
+
   const r = result;
   const contaCom = r ? Math.max(0, Math.round((r.gasto_rs || 0) - (r.economia_mes || 0))) : 0;
-  const parcela72 = r ? Math.round((r.total || 0) * 0.0285) : 0;
-  const parcela60 = r ? Math.round((r.total || 0) * 0.0315) : 0;
-  const parcela48 = r ? Math.round((r.total || 0) * 0.036) : 0;
-  const parcela10 = r ? Math.round((r.total || 0) / 10) : 0;
-  const lucro15 = r ? Math.round((r.economia_ano || 0) * 15 * 1.4 - (r.total || 0)) : 0;
-  const paybackMeses = r?.payback_anos ? Math.round(r.payback_anos * 12) : 0;
-  const paybackTxt = paybackMeses
-    ? `${paybackMeses} MESES ou ${Math.floor(paybackMeses / 12)} anos e ${paybackMeses % 12} meses`
-    : '—';
+  const baseTotal = r ? (r.total || 0) : 0;
+  const parcela72 = r ? Math.round(baseTotal * 0.0285) : 0;
+  const parcela60 = r ? Math.round(baseTotal * 0.0315) : 0;
+  const parcela48 = r ? Math.round(baseTotal * 0.036) : 0;
+  const parcela10 = r ? Math.round(baseTotal / 10) : 0;
+  const lucro15 = r ? Math.round((r.economia_ano || 0) * 15 * 1.4 - baseTotal) : 0;
+  const paybackTxt = r?.payback_label
+    || (r?.payback_min && r?.payback_max
+      ? `Entre ${r.payback_min} e ${r.payback_max} anos`
+      : (r?.payback_anos
+        ? `${Math.round(r.payback_anos * 12)} MESES ou ${Math.floor(r.payback_anos)} anos e ${Math.round((r.payback_anos % 1) * 12)} meses`
+        : '—'));
+
   return (
     <>
       <style>{STYLES}</style>
@@ -201,9 +222,18 @@ export default function PropPage() {
             <div className="logo-txt">Paraty <span>Solar</span></div>
             <h1 style={{ fontFamily: 'Montserrat,sans-serif', fontSize: '1.35rem', color: 'var(--navy)' }}>Gerador de Propostas</h1>
             <p className="sub" style={{ color: 'var(--m)', fontSize: '.88rem' }}>Modelo comercial · On-Grid · Off-Grid · Híbrido</p>
+            <div className="cfg-main-tabs" style={{ marginTop: 12 }}>
+              <button type="button" className={view === 'gerar' ? 'cfg-tab on' : 'cfg-tab'} onClick={() => setView('gerar')}>Gerar proposta</button>
+              <button type="button" className={view === 'config' ? 'cfg-tab on' : 'cfg-tab'} onClick={() => setView('config')}>Configurações</button>
+            </div>
           </div>
           <button className="btn-out" onClick={logout}>Sair</button>
         </div>
+
+        {view === 'config' ? (
+          <SettingsPanel auth={auth} />
+        ) : (
+        <>
         <div className="card no-print">
           <div className="modes">
             {['ongrid', 'offgrid', 'hibrido'].map((m) => (
@@ -238,6 +268,7 @@ export default function PropPage() {
             <button className="btn" type="submit" disabled={busy}>{busy ? 'Gerando…' : 'Gerar proposta comercial ›'}</button>
           </form>
         </div>
+
         <ProposalView
           r={r}
           contaCom={contaCom}
@@ -247,64 +278,14 @@ export default function PropPage() {
           parcela10={parcela10}
           lucro15={lucro15}
           paybackTxt={paybackTxt}
+          onClose={() => setResult(null)}
         />
+
         <div className="card no-print" id="gestao">
-          <h3 style={{ marginBottom: 8, fontFamily: 'Montserrat,sans-serif', color: 'var(--navy)' }}>Gestão de Propostas &amp; Precificação</h3>
-          <p className="sub" style={{ marginBottom: 16, color: 'var(--m)', fontSize: '.88rem' }}>
-            Tabelas de preço no banco (Neon). Mão de obra kits homologados: R$ {(editMao || 1320).toLocaleString('pt-BR')}/kWp.
-            Cliente vê total turnkey sem unitário detalhado.
+          <h3 style={{ marginBottom: 8, fontFamily: 'Montserrat,sans-serif', color: 'var(--navy)' }}>Propostas registradas ({list.length})</h3>
+          <p className="sub" style={{ marginBottom: 12, color: 'var(--m)', fontSize: '.88rem' }}>
+            Preços e fotos: use a aba <strong>Configurações</strong>.
           </p>
-          <div className="price-box">
-            <div className="price-box-title">💰 Tabela R$/kWp instalado (turnkey = equip + mão de obra)</div>
-            <div className="price-grid">
-              <div>
-                <strong>On-Grid</strong>
-                <div>≤4: {fmt(turnkey('ongrid', 'base'))}</div>
-                <div>4–8: {fmt(turnkey('ongrid', 'mid'))}</div>
-                <div>8–15: {fmt(turnkey('ongrid', 'large'))}</div>
-                <div>&gt;15: {fmt(turnkey('ongrid', 'xl'))}</div>
-              </div>
-              <div>
-                <strong>Híbrido</strong>
-                <div>≤4: {fmt(turnkey('hibrido', 'base'))}</div>
-                <div>4–8: {fmt(turnkey('hibrido', 'mid'))}</div>
-                <div>8–15: {fmt(turnkey('hibrido', 'large'))}</div>
-                <div>&gt;15: {fmt(turnkey('hibrido', 'xl'))}</div>
-              </div>
-              <div>
-                <strong>Off-Grid</strong>
-                <div>≤4: {fmt(turnkey('offgrid', 'base'))}</div>
-                <div>4–8: {fmt(turnkey('offgrid', 'mid'))}</div>
-                <div>8–15: {fmt(turnkey('offgrid', 'large'))}</div>
-                <div>&gt;15: {fmt(turnkey('offgrid', 'xl'))}</div>
-              </div>
-            </div>
-            <div className="price-actions">
-              <button type="button" className="btn-out" onClick={() => setShowPriceEdit(!showPriceEdit)}>
-                {showPriceEdit ? 'Fechar edição' : 'Editar tabela de preços'}
-              </button>
-              <button type="button" className="btn-out" onClick={seedPricing} disabled={priceBusy}>
-                {priceBusy ? '…' : 'Seed / reset defaults'}
-              </button>
-              <button type="button" className="btn-out" onClick={loadPricing}>Recarregar</button>
-            </div>
-            {priceMsg && <p className={priceMsg.includes('Erro') || priceMsg.includes('Falha') ? 'err' : 'ok-msg'}>{priceMsg}</p>}
-          </div>
-          {showPriceEdit && (
-            <form className="price-edit" onSubmit={savePricing}>
-              <h4>Editar precificação (banco)</h4>
-              <div className="row">
-                <div>
-                  <label>Mão de obra (R$/kWp) — kits homologados</label>
-                  <input type="number" min="0" step="10" value={editMao} onChange={(e) => setEditMao(e.target.value)} />
-                  <small style={{ color: 'var(--m)' }}>Padrão: 1320 (on-grid/híbrido).</small>
-                </div>
-              </div>
-              <p className="sub">Edite equipamentos via API POST /api/pricing. Tabela acima atualiza após seed/reload.</p>
-              <button className="btn" type="submit" disabled={priceBusy}>{priceBusy ? 'Salvando…' : 'Salvar mão de obra no banco'}</button>
-            </form>
-          )}
-          <h4 style={{ margin: '22px 0 10px' }}>Propostas registradas ({list.length})</h4>
           {!list.length && <p style={{ color: 'var(--m)', fontSize: '.9rem' }}>Nenhuma proposta ainda.</p>}
           <ul className="list">
             {list.map((p) => (
@@ -320,6 +301,8 @@ export default function PropPage() {
           </ul>
           <button type="button" className="btn-out" style={{ marginTop: 12 }} onClick={loadList}>Atualizar lista</button>
         </div>
+        </>
+        )}
       </div>
     </>
   );
