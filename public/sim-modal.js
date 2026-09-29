@@ -1,6 +1,14 @@
-/* Modal R$150 + faixa de preço (estilo Intelbras) */
+/* Modal R$150 (somente on-grid / conta de luz) + faixa de preço */
 (function () {
   function $(id) { return document.getElementById(id); }
+
+  function isOffGrid() {
+    // Preferência: estado interno do sim.js
+    if (window.state && window.state.tipo === 'offgrid') return true;
+    var tipoEl = document.querySelector('.ib-type.selected');
+    var tipo = tipoEl ? (tipoEl.getAttribute('data-tipo') || '') : '';
+    return tipo === 'offgrid';
+  }
 
   window.abrirModalBaixo = function () {
     var m = $('modalBaixo');
@@ -17,15 +25,21 @@
 
   var orig = window.simular;
   window.simular = async function () {
+    // Off-grid NÃO tem conta de luz — nunca exibir aviso de R$ 150
+    if (isOffGrid()) {
+      if (typeof orig === 'function') return orig.apply(this, arguments);
+      return;
+    }
+
     var gasto = 0;
     try {
       var raw = ($('campoGasto') && $('campoGasto').value || '').replace(/[^\d,.]/g, '');
       gasto = parseFloat(raw.replace(/\./g, '').replace(',', '.')) || parseFloat(raw.replace(',', '.')) || 0;
     } catch (e) {}
-    if (window.state && window.state.gasto) gasto = window.state.gasto;
-    var tipoEl = document.querySelector('.ib-type.selected');
-    var tipo = tipoEl ? (tipoEl.getAttribute('data-tipo') || '') : '';
-    if (tipo !== 'offgrid' && gasto > 0 && gasto < 150) {
+    // Só usa state.gasto se NÃO for off-grid (off-grid preenche gasto equivalente via Wh)
+    if (!isOffGrid() && window.state && window.state.gasto) gasto = window.state.gasto;
+
+    if (gasto > 0 && gasto < 150) {
       abrirModalBaixo();
       return;
     }
