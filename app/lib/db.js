@@ -70,8 +70,26 @@ export async function ensureSchema() {
     UNIQUE(mode, faixa)
   )`;
 
+  /* Catálogo de produtos (Intelbras Loja Solar) */
+  await q`CREATE TABLE IF NOT EXISTS products (
+    sku TEXT PRIMARY KEY,
+    nome TEXT NOT NULL,
+    categoria TEXT NOT NULL,
+    marca TEXT,
+    preco NUMERIC NOT NULL,
+    unidade TEXT DEFAULT 'un',
+    potencia_w NUMERIC,
+    potencia_kw NUMERIC,
+    kwh NUMERIC,
+    ativo BOOLEAN NOT NULL DEFAULT true,
+    source TEXT DEFAULT 'intelbras',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`;
+  await q`CREATE INDEX IF NOT EXISTS idx_products_categoria ON products(categoria)`;
+
   _ready = true;
   await seedPriceTables();
+  await seedProducts();
 }
 
 export async function seedPriceTables() {
@@ -184,6 +202,46 @@ export async function savePriceConfig(cfg, updatedBy = 'admin') {
   return getPriceConfig();
 }
 
+/** Seed catálogo de produtos Intelbras (idempotente upsert). */
+export async function seedProducts() {
+  const { CATALOG_PRODUCTS } = await import('./catalog.js');
+  const q = sql();
+  for (const p of CATALOG_PRODUCTS) {
+    await q`INSERT INTO products (sku, nome, categoria, marca, preco, unidade, potencia_w, potencia_kw, kwh, ativo, source, updated_at)
+      VALUES (
+        ${p.sku}, ${p.nome}, ${p.categoria}, ${p.marca || null}, ${p.preco},
+        ${p.unidade || 'un'}, ${p.potencia_w ?? null}, ${p.potencia_kw ?? null}, ${p.kwh ?? null},
+        ${p.ativo !== false}, 'intelbras', NOW()
+      )
+      ON CONFLICT (sku) DO UPDATE SET
+        nome = EXCLUDED.nome,
+        categoria = EXCLUDED.categoria,
+        marca = EXCLUDED.marca,
+        preco = EXCLUDED.preco,
+        unidade = EXCLUDED.unidade,
+        potencia_w = EXCLUDED.potencia_w,
+        potencia_kw = EXCLUDED.potencia_kw,
+        kwh = EXCLUDED.kwh,
+        ativo = EXCLUDED.ativo,
+        updated_at = NOW()`;
+  }
+  return CATALOG_PRODUCTS.length;
+}
+
+export async function listProducts({ categoria } = {}) {
+  await ensureSchema();
+  if (categoria) {
+    return sql()`SELECT * FROM products WHERE ativo = true AND categoria = ${categoria} ORDER BY nome`;
+  }
+  return sql()`SELECT * FROM products WHERE ativo = true ORDER BY categoria, nome`;
+}
+
+export async function getProduct(sku) {
+  await ensureSchema();
+  const rows = await sql()`SELECT * FROM products WHERE sku = ${sku} LIMIT 1`;
+  return rows[0] || null;
+}
+
 export async function insertLead(row) {
   await ensureSchema();
   const id = row.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -227,6 +285,8 @@ export async function insertProposal(row) {
     equip_total: row.equip_total,
     mao_obra: row.mao_obra,
     homologado: row.homologado,
+    desconto_icms: row.desconto_icms,
+    icms_isento: row.icms_isento,
   };
   await sql()`INSERT INTO proposals (id,lead_id,mode,cliente_nome,cliente_telefone,cliente_email,endereco,cidade,uf,consumo_kwh,gasto_rs,kwp,modulos,inversor,baterias,area_m2,geracao_mes,economia_ano,investimento,payback_anos,itens,total,validade_dias,status,created_by,payload)
     VALUES (${id},${row.lead_id||null},${row.mode},${row.cliente_nome||null},${row.cliente_telefone||null},${row.cliente_email||null},${row.endereco||null},${row.cidade||null},${row.uf||null},${row.consumo_kwh??null},${row.gasto_rs??null},${row.kwp??null},${row.modulos??null},${row.inversor||null},${row.baterias?JSON.stringify(row.baterias):null},${row.area_m2??null},${row.geracao_mes??null},${row.economia_ano??null},${row.investimento??null},${row.payback_anos??null},${JSON.stringify(row.itens||[])},${row.total??null},${row.validade_dias??15},${row.status||'rascunho'},${row.created_by||null},${JSON.stringify(payload)})`;
