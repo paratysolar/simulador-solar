@@ -17,27 +17,40 @@ const LOCAL_PHOTOS = [
   '20250211_161418.jpg','20250626_114815.jpg','20250714_150407.jpg','20250714_150823.jpg','20251017_141001.jpg',
   '20251017_141014.jpg','20251017_141026.jpg','20251021_145736.jpg','20260108_094825.jpg','20260108_115422.jpg',
   '20260109_140820.jpg','20260109_161519.jpg','20260109_161533.jpg','20260109_161543.jpg',
+  'WhatsApp_Image_2026-09-06_at_15.35.46.jpg','WhatsApp_Image_2026-09-06_at_15.35.46_1.jpg',
+  'WhatsApp_Image_2026-09-06_at_15.35.48.jpg','WhatsApp_Image_2026-09-06_at_15.35.54.jpg',
+  'WhatsApp_Image_2026-09-06_at_15.35.54_1.jpg','WhatsApp_Image_2026-09-06_at_15.35.55_1.jpg',
+  'foto-todos-os-paineis3.jpg','images_11.jpg','images_10.jpg','images_9.jpg','images_8.jpg','images_6.jpg',
+  'Simulador-De-Energia-Solar-3-1024x576.jpg','Simulador-De-Energia-Solar-Fotovoltaica-3-1024x576.jpg',
 ];
 
 const DEFAULT_PHOTOS = {
   cover1: '/prop-photos/20240505_155359.jpg',
   cover2: '/prop-photos/20250211_161337.jpg',
-  cover3: '/prop-photos/20240827_142114.jpg',
+  cover3: '/prop-photos/20240827_142325.jpg',
   portfolio: [
-    { src: '/prop-photos/20240222_095716.jpg', title: 'Residencial', place: 'Paraty – RJ' },
-    { src: '/prop-photos/20240224_110459.jpg', title: 'Residencial', place: 'Costa Verde – RJ' },
-    { src: '/prop-photos/20240505_155404.jpg', title: 'Comercial', place: 'Paraty – RJ' },
-    { src: '/prop-photos/20240615_102913.jpg', title: 'Residencial', place: 'Angra dos Reis – RJ' },
-    { src: '/prop-photos/20240827_142325.jpg', title: 'Comercial', place: 'Paraty – RJ' },
-    { src: '/prop-photos/20250211_161402.jpg', title: 'Residencial', place: 'Costa Verde – RJ' },
-    { src: '/prop-photos/20250714_150407.jpg', title: 'Residencial', place: 'Paraty – RJ' },
-    { src: '/prop-photos/20251017_141001.jpg', title: 'Comercial', place: 'Paraty – RJ' },
-    { src: '/prop-photos/20260108_094825.jpg', title: 'Residencial', place: 'Costa Verde – RJ' },
+    { src: '/prop-photos/20240222_095716.jpg', title: 'Residencial — telhado cerâmico', potencia: '5,58 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20240224_110459.jpg', title: 'Comercial — cobertura metálica', potencia: '12,40 kWp', place: 'Costa Verde – RJ' },
+    { src: '/prop-photos/20240224_110913.jpg', title: 'Comercial — laje', potencia: '15,50 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20240505_155404.jpg', title: 'Residencial — comissionamento', potencia: '6,20 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20240615_102913.jpg', title: 'Residencial — telha metálica', potencia: '4,96 kWp', place: 'Angra dos Reis – RJ' },
+    { src: '/prop-photos/20240827_142325.jpg', title: 'Comercial — usina em laje', potencia: '18,60 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20250211_161402.jpg', title: 'Residencial — telha colonial', potencia: '8,68 kWp', place: 'Costa Verde – RJ' },
+    { src: '/prop-photos/20250626_114815.jpg', title: 'Solo — estrutura metálica', potencia: '6,20 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20250714_150407.jpg', title: 'Solo — sistema isolado', potencia: '4,96 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20251017_141001.jpg', title: 'Residencial — telha cerâmica', potencia: '3,72 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20260109_140820.jpg', title: 'Residencial — laje moderna', potencia: '9,92 kWp', place: 'Costa Verde – RJ' },
+    { src: '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.46.jpg', title: 'Residencial — vista Serra', potencia: '4,96 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/foto-todos-os-paineis3.jpg', title: 'Rural — galpão metálico', potencia: '24,80 kWp', place: 'Costa Verde – RJ' },
+    { src: '/prop-photos/Simulador-De-Energia-Solar-Fotovoltaica-3-1024x576.jpg', title: 'Industrial — galpão', potencia: '49,60 kWp', place: 'Região – RJ' },
+    { src: '/prop-photos/images_11.jpg', title: 'Residencial — telha colonial', potencia: '3,10 kWp', place: 'Paraty – RJ' },
   ],
   team: [
     '/prop-photos/20251021_145736.jpg',
-    '/prop-photos/20260109_140820.jpg',
-    '/prop-photos/20260109_161519.jpg',
+    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.54.jpg',
+    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.55_1.jpg',
+    '/prop-photos/20240505_155408.jpg',
+    '/prop-photos/20260108_094825.jpg',
   ],
 };
 
@@ -84,13 +97,11 @@ export async function GET(request) {
     return NextResponse.json({
       ok: true,
       photos,
-      defaults: DEFAULT_PHOTOS,
       local_files: LOCAL_PHOTOS.map((f) => `/prop-photos/${f}`),
       products,
-      catalog_count: CATALOG_PRODUCTS.length,
     });
-  } catch (err) {
-    return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: String(e.message || e) }, { status: 500 });
   }
 }
 
@@ -106,11 +117,27 @@ export async function POST(request) {
         cover1: String(p.cover1 || DEFAULT_PHOTOS.cover1),
         cover2: String(p.cover2 || DEFAULT_PHOTOS.cover2),
         cover3: String(p.cover3 || DEFAULT_PHOTOS.cover3),
-        portfolio: Array.isArray(p.portfolio) ? p.portfolio.slice(0, 12) : DEFAULT_PHOTOS.portfolio,
-        team: Array.isArray(p.team) ? p.team.slice(0, 6) : DEFAULT_PHOTOS.team,
+        portfolio: Array.isArray(p.portfolio)
+          ? p.portfolio.slice(0, 24).map((it) => ({
+              src: String(it.src || ''),
+              title: String(it.title || 'Instalação'),
+              potencia: String(it.potencia || ''),
+              place: String(it.place || ''),
+            }))
+          : DEFAULT_PHOTOS.portfolio,
+        team: Array.isArray(p.team) ? p.team.slice(0, 8) : DEFAULT_PHOTOS.team,
       };
       const ok = await setSetting('proposal_photos', photos);
-      return NextResponse.json({ ok: true, photos, persisted: ok, message: ok ? 'Fotos da proposta salvas.' : 'Salvo (sem banco).' });
+      return NextResponse.json({
+        ok: true,
+        photos,
+        persisted: ok,
+        message: ok ? 'Fotos da proposta salvas.' : 'Salvo localmente (sem banco).',
+      });
+    }
+    if (body.reset_photos) {
+      await setSetting('proposal_photos', DEFAULT_PHOTOS);
+      return NextResponse.json({ ok: true, photos: DEFAULT_PHOTOS, message: 'Fotos restauradas ao padrão.' });
     }
     if (body.delete_sku) {
       if (!hasDatabase()) return NextResponse.json({ error: 'DATABASE_URL não configurada' }, { status: 503 });
@@ -138,12 +165,8 @@ export async function POST(request) {
           potencia_kw = EXCLUDED.potencia_kw, kwh = EXCLUDED.kwh, ativo = true, updated_at = NOW()`;
       return NextResponse.json({ ok: true, message: 'Produto salvo.', sku });
     }
-    if (body.reset_photos) {
-      await setSetting('proposal_photos', DEFAULT_PHOTOS);
-      return NextResponse.json({ ok: true, photos: DEFAULT_PHOTOS, message: 'Fotos restauradas ao padrão.' });
-    }
     return NextResponse.json({ error: 'Nenhuma ação reconhecida' }, { status: 400 });
-  } catch (err) {
-    return NextResponse.json({ error: String(err.message || err) }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: String(e.message || e) }, { status: 500 });
   }
 }
