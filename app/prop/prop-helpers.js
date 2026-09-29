@@ -1,48 +1,54 @@
-/** Fotos da proposta — prioriza config do admin, depois /prop-photos, depois Unsplash */
+/** Fotos da proposta — prioriza config do admin, depois /prop-photos */
 const META = [
-  { title: 'Residencial', place: 'Paraty – RJ', seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
-  { title: 'Comercial', place: 'Paraty – RJ', seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
-  { title: 'Residencial', place: 'Costa Verde – RJ', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
-  { title: 'Residencial', place: 'Angra dos Reis – RJ', seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
-  { title: 'Comercial', place: 'Paraty – RJ', seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
-  { title: 'Residencial', place: 'Costa Verde – RJ', seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
-  { title: 'Residencial', place: 'Paraty – RJ', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
-  { title: 'Comercial', place: 'Paraty – RJ', seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
-  { title: 'Residencial', place: 'Costa Verde – RJ', seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
+  { title: 'Residencial — telhado cerâmico', potencia: '5,58 kWp', place: 'Paraty – RJ' },
+  { title: 'Comercial — cobertura metálica', potencia: '12,40 kWp', place: 'Costa Verde – RJ' },
+  { title: 'Comercial — laje', potencia: '15,50 kWp', place: 'Paraty – RJ' },
+  { title: 'Residencial — comissionamento', potencia: '6,20 kWp', place: 'Paraty – RJ' },
+  { title: 'Residencial — telha metálica', potencia: '4,96 kWp', place: 'Angra dos Reis – RJ' },
+  { title: 'Comercial — usina em laje', potencia: '18,60 kWp', place: 'Paraty – RJ' },
+  { title: 'Residencial — telha colonial', potencia: '8,68 kWp', place: 'Costa Verde – RJ' },
+  { title: 'Solo — estrutura metálica', potencia: '6,20 kWp', place: 'Paraty – RJ' },
+  { title: 'Solo — sistema isolado', potencia: '4,96 kWp', place: 'Paraty – RJ' },
+  { title: 'Residencial — telha cerâmica', potencia: '3,72 kWp', place: 'Paraty – RJ' },
+  { title: 'Residencial — laje moderna', potencia: '9,92 kWp', place: 'Costa Verde – RJ' },
+  { title: 'Residencial — vista Serra', potencia: '4,96 kWp', place: 'Paraty – RJ' },
+  { title: 'Rural — galpão metálico', potencia: '24,80 kWp', place: 'Costa Verde – RJ' },
+  { title: 'Industrial — galpão', potencia: '49,60 kWp', place: 'Região – RJ' },
+  { title: 'Residencial — telha colonial', potencia: '3,10 kWp', place: 'Paraty – RJ' },
 ];
-
-const UNSPLASH = {
-  cover1: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=400&h=400&fit=crop&q=80',
-  cover2: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=400&h=400&fit=crop&q=80',
-  cover3: 'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=400&h=400&fit=crop&q=80',
-  portfolio: [
-    'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1497440001374-f26997328c1b?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1566093097221-ac02c3d8c5a4?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1592833159155-c62df1b65634?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=600&h=400&fit=crop&q=80',
-  ],
-  team: [
-    'https://images.unsplash.com/photo-1621905252507-b35492ae9793?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=600&h=400&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop&q=80',
-  ],
-};
 
 const FALLBACK_PHOTOS = {
   logo: null,
-  cover1: UNSPLASH.cover1,
-  cover2: UNSPLASH.cover2,
-  cover3: UNSPLASH.cover3,
-  portfolio: UNSPLASH.portfolio.map((src, i) => ({ src, ...META[i] })),
-  team: UNSPLASH.team,
+  cover1: '/prop-photos/20240505_155359.jpg',
+  cover2: '/prop-photos/20250211_161337.jpg',
+  cover3: '/prop-photos/20240827_142325.jpg',
+  portfolio: [
+    { src: '/prop-photos/20240222_095716.jpg', title: 'Residencial — telhado cerâmico', potencia: '5,58 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20240224_110459.jpg', title: 'Comercial — cobertura metálica', potencia: '12,40 kWp', place: 'Costa Verde – RJ' },
+    { src: '/prop-photos/20240224_110913.jpg', title: 'Comercial — laje', potencia: '15,50 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20240505_155404.jpg', title: 'Residencial — comissionamento', potencia: '6,20 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20240615_102913.jpg', title: 'Residencial — telha metálica', potencia: '4,96 kWp', place: 'Angra dos Reis – RJ' },
+    { src: '/prop-photos/20240827_142325.jpg', title: 'Comercial — usina em laje', potencia: '18,60 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20250211_161402.jpg', title: 'Residencial — telha colonial', potencia: '8,68 kWp', place: 'Costa Verde – RJ' },
+    { src: '/prop-photos/20250626_114815.jpg', title: 'Solo — estrutura metálica', potencia: '6,20 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20250714_150407.jpg', title: 'Solo — sistema isolado', potencia: '4,96 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20251017_141001.jpg', title: 'Residencial — telha cerâmica', potencia: '3,72 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/20260109_140820.jpg', title: 'Residencial — laje moderna', potencia: '9,92 kWp', place: 'Costa Verde – RJ' },
+    { src: '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.46.jpg', title: 'Residencial — vista Serra', potencia: '4,96 kWp', place: 'Paraty – RJ' },
+    { src: '/prop-photos/foto-todos-os-paineis3.jpg', title: 'Rural — galpão metálico', potencia: '24,80 kWp', place: 'Costa Verde – RJ' },
+    { src: '/prop-photos/Simulador-De-Energia-Solar-Fotovoltaica-3-1024x576.jpg', title: 'Industrial — galpão', potencia: '49,60 kWp', place: 'Região – RJ' },
+    { src: '/prop-photos/images_11.jpg', title: 'Residencial — telha colonial', potencia: '3,10 kWp', place: 'Paraty – RJ' },
+  ],
+  team: [
+    '/prop-photos/20251021_145736.jpg',
+    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.54.jpg',
+    '/prop-photos/WhatsApp_Image_2026-09-06_at_15.35.55_1.jpg',
+    '/prop-photos/20240505_155408.jpg',
+    '/prop-photos/20260108_094825.jpg',
+  ],
 };
 
-/** Fotos ativas: config do admin (sessionStorage) → fallback */
+/** Fotos ativas: config do admin (sessionStorage) → fallback local */
 export function getPhotos() {
   if (typeof window !== 'undefined') {
     try {
@@ -59,9 +65,8 @@ export function getPhotos() {
               ? p.portfolio.map((item, i) => ({
                   src: item.src || item,
                   title: item.title || META[i % META.length]?.title || 'Instalação',
+                  potencia: item.potencia || META[i % META.length]?.potencia || '',
                   place: item.place || META[i % META.length]?.place || 'Paraty – RJ',
-                  seg: item.title || META[i % META.length]?.seg,
-                  cid: item.place || META[i % META.length]?.cid,
                 }))
               : FALLBACK_PHOTOS.portfolio,
             team: Array.isArray(p.team) && p.team.length ? p.team : FALLBACK_PHOTOS.team,
