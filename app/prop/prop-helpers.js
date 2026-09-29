@@ -1,14 +1,14 @@
-/** Fotos — Unsplash estável enquanto fotos reais sobem */
+/** Fotos da proposta — prioriza config do admin, depois /prop-photos, depois Unsplash */
 const META = [
-  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
-  { seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
-  { seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
-  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
-  { seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
-  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
-  { seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
-  { seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
-  { seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
+  { title: 'Residencial', place: 'Paraty – RJ', seg: 'Residencial', cid: 'Paraty - RJ', mods: 12, gen: '420 kWh/mês', econ: 'R$ 380' },
+  { title: 'Comercial', place: 'Paraty – RJ', seg: 'Comercial', cid: 'Paraty - RJ', mods: 24, gen: '890 kWh/mês', econ: 'R$ 780' },
+  { title: 'Residencial', place: 'Costa Verde – RJ', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 10, gen: '360 kWh/mês', econ: 'R$ 320' },
+  { title: 'Residencial', place: 'Angra dos Reis – RJ', seg: 'Residencial', cid: 'Paraty - RJ', mods: 16, gen: '580 kWh/mês', econ: 'R$ 520' },
+  { title: 'Comercial', place: 'Paraty – RJ', seg: 'Comercial', cid: 'Angra dos Reis - RJ', mods: 32, gen: '1.150 kWh/mês', econ: 'R$ 980' },
+  { title: 'Residencial', place: 'Costa Verde – RJ', seg: 'Residencial', cid: 'Paraty - RJ', mods: 14, gen: '500 kWh/mês', econ: 'R$ 450' },
+  { title: 'Residencial', place: 'Paraty – RJ', seg: 'Residencial', cid: 'Costa Verde - RJ', mods: 8, gen: '290 kWh/mês', econ: 'R$ 260' },
+  { title: 'Comercial', place: 'Paraty – RJ', seg: 'Comercial', cid: 'Paraty - RJ', mods: 40, gen: '1.420 kWh/mês', econ: 'R$ 1.200' },
+  { title: 'Residencial', place: 'Costa Verde – RJ', seg: 'Residencial', cid: 'Paraty - RJ', mods: 18, gen: '650 kWh/mês', econ: 'R$ 580' },
 ];
 
 const UNSPLASH = {
@@ -33,7 +33,7 @@ const UNSPLASH = {
   ],
 };
 
-export const PHOTOS = {
+const FALLBACK_PHOTOS = {
   logo: null,
   cover1: UNSPLASH.cover1,
   cover2: UNSPLASH.cover2,
@@ -41,6 +41,39 @@ export const PHOTOS = {
   portfolio: UNSPLASH.portfolio.map((src, i) => ({ src, ...META[i] })),
   team: UNSPLASH.team,
 };
+
+/** Fotos ativas: config do admin (sessionStorage) → fallback */
+export function getPhotos() {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = sessionStorage.getItem('ps_proposal_photos');
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p && (p.cover1 || p.portfolio)) {
+          return {
+            logo: null,
+            cover1: p.cover1 || FALLBACK_PHOTOS.cover1,
+            cover2: p.cover2 || FALLBACK_PHOTOS.cover2,
+            cover3: p.cover3 || FALLBACK_PHOTOS.cover3,
+            portfolio: Array.isArray(p.portfolio) && p.portfolio.length
+              ? p.portfolio.map((item, i) => ({
+                  src: item.src || item,
+                  title: item.title || META[i % META.length]?.title || 'Instalação',
+                  place: item.place || META[i % META.length]?.place || 'Paraty – RJ',
+                  seg: item.title || META[i % META.length]?.seg,
+                  cid: item.place || META[i % META.length]?.cid,
+                }))
+              : FALLBACK_PHOTOS.portfolio,
+            team: Array.isArray(p.team) && p.team.length ? p.team : FALLBACK_PHOTOS.team,
+          };
+        }
+      }
+    } catch (_) {}
+  }
+  return FALLBACK_PHOTOS;
+}
+
+export const PHOTOS = FALLBACK_PHOTOS;
 
 export function fmt(n) {
   return 'R$ ' + Math.round(n || 0).toLocaleString('pt-BR');
